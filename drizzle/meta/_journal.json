@@ -8,6 +8,13 @@
       "when": 1794767559575,
       "tag": "0000_dear_loners",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794768206444,
+      "tag": "0001_cute_pretty_boy",
+      "breakpoints": true
     }
   ]
 }
