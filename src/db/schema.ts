@@ -112,6 +112,24 @@ export const usersRelations = relations(users, ({ many }) => ({
   splits: many(splits),
 }));
 
+export const invites = pgTable(
+  "invites",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    groupId: uuid("group_id")
+      .notNull()
+      .references(() => groups.id, { onDelete: "cascade" }),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("invites_group_id_idx").on(t.groupId)],
+);
+
 export const groupsRelations = relations(groups, ({ one, many }) => ({
   createdByUser: one(users, {
     fields: [groups.createdBy],
@@ -120,6 +138,7 @@ export const groupsRelations = relations(groups, ({ one, many }) => ({
   memberships: many(memberships),
   expenses: many(expenses),
   payments: many(payments),
+  invites: many(invites),
 }));
 
 export const membershipsRelations = relations(memberships, ({ one }) => ({
@@ -150,9 +169,18 @@ export const paymentsRelations = relations(payments, ({ one }) => ({
   toUser: one(users, { fields: [payments.toUserId], references: [users.id] }),
 }));
 
+export const invitesRelations = relations(invites, ({ one }) => ({
+  group: one(groups, { fields: [invites.groupId], references: [groups.id] }),
+  createdByUser: one(users, {
+    fields: [invites.createdBy],
+    references: [users.id],
+  }),
+}));
+
 export type User = typeof users.$inferSelect;
 export type Group = typeof groups.$inferSelect;
 export type Membership = typeof memberships.$inferSelect;
 export type Expense = typeof expenses.$inferSelect;
 export type Split = typeof splits.$inferSelect;
 export type Payment = typeof payments.$inferSelect;
+export type Invite = typeof invites.$inferSelect;
