@@ -4,18 +4,17 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { register, type RegisterState } from "@/lib/actions/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
 
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
-    >
+    <Button type="submit" disabled={pending} className="w-full">
       {pending ? "creating account..." : "register"}
-    </button>
+    </Button>
   );
 }
 
@@ -24,43 +23,29 @@ export default function RegisterForm() {
 
   return (
     <form action={action} className="space-y-4">
-      <div className="space-y-1">
-        <label htmlFor="name" className="text-sm font-medium">
-          name
-        </label>
-        <input
-          id="name"
-          name="name"
-          required
-          autoComplete="name"
-          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-        />
+      <div className="space-y-2">
+        <Label htmlFor="name">name</Label>
+        <Input id="name" name="name" required autoComplete="name" />
       </div>
-      <div className="space-y-1">
-        <label htmlFor="email" className="text-sm font-medium">
-          email
-        </label>
-        <input
+      <div className="space-y-2">
+        <Label htmlFor="email">email</Label>
+        <Input
           id="email"
           name="email"
           type="email"
           required
           autoComplete="email"
-          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
         />
       </div>
-      <div className="space-y-1">
-        <label htmlFor="password" className="text-sm font-medium">
-          password
-        </label>
-        <input
+      <div className="space-y-2">
+        <Label htmlFor="password">password</Label>
+        <Input
           id="password"
           name="password"
           type="password"
           required
           minLength={8}
           autoComplete="new-password"
-          className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
         />
       </div>
       {state.error && (

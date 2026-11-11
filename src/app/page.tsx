@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { Button } from "@/components/ui/button";
 
 export default async function Home() {
   const session = await auth();
@@ -17,18 +18,12 @@ export default async function Home() {
           split expenses with friends, settle up, stay even
         </p>
         <div className="flex justify-center gap-3">
-          <Link
-            href="/login"
-            className="rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground"
-          >
-            log in
-          </Link>
-          <Link
-            href="/register"
-            className="rounded-md border border-input px-5 py-2.5 text-sm font-medium hover:bg-accent"
-          >
-            register
-          </Link>
+          <Button asChild>
+            <Link href="/login">log in</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/register">register</Link>
+          </Button>
         </div>
       </div>
     </main>
