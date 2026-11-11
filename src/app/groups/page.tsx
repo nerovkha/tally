@@ -1,26 +1,46 @@
-import { redirect } from "next/navigation";
+import Link from "next/link";
 import { auth } from "@/auth";
-import SignOutButton from "@/components/sign-out-button";
+import { getGroupsForUser } from "@/lib/data/groups";
+import { NewGroupDialog } from "@/components/new-group-dialog";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const metadata = { title: "Groups — Tally" };
 
 export default async function GroupsPage() {
   const session = await auth();
-
-  if (!session?.user) {
-    redirect("/login");
-  }
+  const groups = await getGroupsForUser(session!.user!.id);
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
-      <header className="flex items-center justify-between">
+    <main className="py-8">
+      <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">your groups</h1>
-        <div className="flex items-center gap-3 text-sm">
-          <span className="text-muted-foreground">{session.user.name}</span>
-          <SignOutButton />
+        <NewGroupDialog />
+      </div>
+
+      {groups.length === 0 ? (
+        <div className="mt-24 text-center text-muted-foreground">
+          <p>no groups yet</p>
+          <p className="text-sm">
+            create one for your flat, a trip, or dinner club
+          </p>
         </div>
-      </header>
-      <p className="mt-16 text-center text-muted-foreground">no groups yet</p>
+      ) : (
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          {groups.map((group) => (
+            <Link key={group.id} href={`/groups/${group.id}`}>
+              <Card className="transition-colors hover:border-foreground/25">
+                <CardContent className="py-5">
+                  <div className="font-medium">{group.name}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {group.memberCount}{" "}
+                    {group.memberCount === 1 ? "member" : "members"}
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
     </main>
   );
 }
