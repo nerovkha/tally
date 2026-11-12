@@ -20,7 +20,7 @@ function SubmitButton() {
 
   return (
     <Button type="submit" disabled={pending} className="w-full">
-      {pending ? "creating..." : "create group"}
+      {pending ? "Creating…" : "Create group"}
     </Button>
   );
 }
@@ -34,19 +34,19 @@ export function NewGroupDialog() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button>new group</Button>
+        <Button>New group</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>new group</DialogTitle>
+          <DialogTitle>New group</DialogTitle>
           <DialogDescription>
-            create a group, then invite people with a link
+            Create a group, then invite people with a link
           </DialogDescription>
         </DialogHeader>
         <form action={action} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">group name</Label>
-            <Input id="name" name="name" placeholder="flat 4b, iceland trip..." />
+            <Label htmlFor="name">Group name</Label>
+            <Input id="name" name="name" placeholder="Flat 4B, Iceland trip…" />
             {state.error && (
               <p className="text-sm text-red-600" role="alert">
                 {state.error}

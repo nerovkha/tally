@@ -33,7 +33,7 @@ export async function register(
     .limit(1);
 
   if (existing) {
-    return { error: "an account with this email already exists" };
+    return { error: "An account with this email already exists" };
   }
 
   const passwordHash = await bcrypt.hash(password, 10);

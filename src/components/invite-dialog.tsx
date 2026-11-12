@@ -38,31 +38,31 @@ export function InviteDialog({ groupId }: { groupId: string }) {
   async function copy() {
     if (!url) return;
     await navigator.clipboard.writeText(url);
-    toast.success("invite link copied");
+    toast.success("Invite link copied");
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">invite</Button>
+        <Button variant="outline">Invite</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>invite to group</DialogTitle>
+          <DialogTitle>Invite to group</DialogTitle>
           <DialogDescription>
-            anyone with this link can join the group
+            Anyone with this link can join the group
           </DialogDescription>
         </DialogHeader>
         {pending || !url ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" /> creating invite link...
+            <Loader2 className="size-4 animate-spin" /> Creating invite link…
           </div>
         ) : (
           <div className="space-y-2">
-            <Label htmlFor="invite-url">invite link</Label>
+            <Label htmlFor="invite-url">Invite link</Label>
             <div className="flex gap-2">
               <Input id="invite-url" readOnly value={url} />
-              <Button onClick={copy}>copy</Button>
+              <Button onClick={copy}>Copy</Button>
             </div>
           </div>
         )}

@@ -30,7 +30,7 @@ export default function LoginForm({
     });
 
     if (result?.error) {
-      setError("wrong email or password");
+      setError("Wrong email or password");
       setPending(false);
       return;
     }
@@ -42,7 +42,7 @@ export default function LoginForm({
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="email">email</Label>
+        <Label htmlFor="email">Email</Label>
         <Input
           id="email"
           name="email"
@@ -52,7 +52,7 @@ export default function LoginForm({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password">password</Label>
+        <Label htmlFor="password">Password</Label>
         <Input
           id="password"
           name="password"
@@ -67,12 +67,12 @@ export default function LoginForm({
         </p>
       )}
       <Button type="submit" disabled={pending} className="w-full">
-        {pending ? "logging in..." : "log in"}
+        {pending ? "Logging in…" : "Log in"}
       </Button>
       <p className="text-center text-sm text-muted-foreground">
-        no account?{" "}
+        No account?{" "}
         <Link href="/register" className="underline underline-offset-4">
-          register
+          Register
         </Link>
       </p>
     </form>

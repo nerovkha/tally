@@ -18,8 +18,8 @@ export type GroupFormState = { error?: string };
 const groupNameSchema = z
   .string()
   .trim()
-  .min(1, "group name is required")
-  .max(60, "keep the name under 60 characters");
+  .min(1, "Group name is required")
+  .max(60, "Keep the name under 60 characters");
 
 export async function createGroup(
   _prev: GroupFormState,
@@ -100,7 +100,7 @@ export async function createInvite(groupId: string) {
 
   const member = await isMember(groupId, session.user.id);
   if (!member) {
-    return { error: "you are not a member of this group" };
+    return { error: "You are not a member of this group" };
   }
 
   const [invite] = await db

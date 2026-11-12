@@ -13,7 +13,7 @@ function SubmitButton() {
 
   return (
     <Button type="submit" disabled={pending} className="w-full">
-      {pending ? "creating account..." : "register"}
+      {pending ? "Creating account…" : "Register"}
     </Button>
   );
 }
@@ -24,11 +24,11 @@ export default function RegisterForm() {
   return (
     <form action={action} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="name">name</Label>
+        <Label htmlFor="name">Name</Label>
         <Input id="name" name="name" required autoComplete="name" />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="email">email</Label>
+        <Label htmlFor="email">Email</Label>
         <Input
           id="email"
           name="email"
@@ -38,7 +38,7 @@ export default function RegisterForm() {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password">password</Label>
+        <Label htmlFor="password">Password</Label>
         <Input
           id="password"
           name="password"
@@ -55,9 +55,9 @@ export default function RegisterForm() {
       )}
       <SubmitButton />
       <p className="text-center text-sm text-muted-foreground">
-        already have an account?{" "}
+        Already have an account?{" "}
         <Link href="/login" className="underline underline-offset-4">
-          log in
+          Log in
         </Link>
       </p>
     </form>

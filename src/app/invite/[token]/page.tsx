@@ -25,9 +25,9 @@ export default async function InvitePage({
     return (
       <main className="grid flex-1 place-items-center px-4">
         <Alert variant="destructive" className="max-w-sm">
-          <AlertTitle>this invite is invalid or expired</AlertTitle>
+          <AlertTitle>This invite is invalid or expired</AlertTitle>
           <AlertDescription>
-            ask a group member for a fresh link
+            Ask a group member for a fresh link
           </AlertDescription>
         </Alert>
       </main>
@@ -43,12 +43,12 @@ export default async function InvitePage({
           <CardHeader>
             <CardTitle>{invite.groupName}</CardTitle>
             <CardDescription>
-              you are already a member of this group
+              You are already a member of this group
             </CardDescription>
           </CardHeader>
           <CardFooter>
             <Button asChild className="w-full">
-              <Link href={`/groups/${invite.groupId}`}>go to group</Link>
+              <Link href={`/groups/${invite.groupId}`}>Go to group</Link>
             </Button>
           </CardFooter>
         </Card>
@@ -60,18 +60,18 @@ export default async function InvitePage({
     <main className="grid flex-1 place-items-center px-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>join {invite.groupName}?</CardTitle>
+          <CardTitle>Join {invite.groupName}?</CardTitle>
           <CardDescription>
             {session?.user
-              ? "you will be added as a member of this group"
-              : "log in or register first, then you can join"}
+              ? "You'll be added as a member of this group"
+              : "Log in or register first, then you can join"}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form action={acceptInvite}>
             <input type="hidden" name="token" value={token} />
             <Button type="submit" className="w-full">
-              {session?.user ? "join group" : "log in and join"}
+              {session?.user ? "Join group" : "Log in and join"}
             </Button>
           </form>
         </CardContent>

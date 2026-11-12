@@ -13,15 +13,15 @@ export default async function GroupsPage() {
   return (
     <main className="py-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">your groups</h1>
+        <h1 className="text-2xl font-semibold">Your groups</h1>
         <NewGroupDialog />
       </div>
 
       {groups.length === 0 ? (
         <div className="mt-24 text-center text-muted-foreground">
-          <p>no groups yet</p>
+          <p>No groups yet</p>
           <p className="text-sm">
-            create one for your flat, a trip, or dinner club
+            Create one for your flat, a trip, or dinner club
           </p>
         </div>
       ) : (

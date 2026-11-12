@@ -15,14 +15,14 @@ export default async function Home() {
       <div className="max-w-md space-y-6 text-center">
         <h1 className="text-5xl font-bold tracking-tight">Tally</h1>
         <p className="text-lg text-muted-foreground">
-          split expenses with friends, settle up, stay even
+          Split expenses with friends, settle up, and stay even
         </p>
         <div className="flex justify-center gap-3">
           <Button asChild>
-            <Link href="/login">log in</Link>
+            <Link href="/login">Log in</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/register">register</Link>
+            <Link href="/register">Register</Link>
           </Button>
         </div>
       </div>

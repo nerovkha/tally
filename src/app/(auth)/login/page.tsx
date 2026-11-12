@@ -10,7 +10,7 @@ export default async function LoginPage({
   return (
     <main className="grid flex-1 place-items-center px-4">
       <div className="w-full max-w-sm space-y-6">
-        <h1 className="text-2xl font-semibold text-center">log in to Tally</h1>
+        <h1 className="text-2xl font-semibold text-center">Log in to Tally</h1>
         <LoginForm
           callbackUrl={
             typeof callbackUrl === "string" ? callbackUrl : undefined

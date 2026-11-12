@@ -12,14 +12,14 @@ export function LeaveGroupButton({ groupId }: { groupId: string }) {
       variant="outline"
       disabled={pending}
       onClick={() => {
-        if (confirm("leave this group?")) {
+        if (confirm("Leave this group?")) {
           startTransition(async () => {
             await leaveGroup(groupId);
           });
         }
       }}
     >
-      {pending ? "leaving..." : "leave"}
+      {pending ? "Leaving…" : "Leave"}
     </Button>
   );
 }
@@ -32,14 +32,14 @@ export function DeleteGroupButton({ groupId }: { groupId: string }) {
       variant="destructive"
       disabled={pending}
       onClick={() => {
-        if (confirm("delete this group with all its expenses?")) {
+        if (confirm("Delete this group and all its expenses?")) {
           startTransition(async () => {
             await deleteGroup(groupId);
           });
         }
       }}
     >
-      {pending ? "deleting..." : "delete"}
+      {pending ? "Deleting…" : "Delete"}
     </Button>
   );
 }
