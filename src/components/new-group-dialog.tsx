@@ -45,8 +45,12 @@ export function NewGroupDialog() {
         </DialogHeader>
         <form action={action} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Group name</Label>
-            <Input id="name" name="name" placeholder="Flat 4B, Iceland trip…" />
+            <Label htmlFor="group-name">Group name</Label>
+            <Input
+              id="group-name"
+              name="name"
+              placeholder="Flat 4B, Iceland trip…"
+            />
             {state.error && (
               <p className="text-sm text-red-600" role="alert">
                 {state.error}
