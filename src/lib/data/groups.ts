@@ -113,3 +113,12 @@ export async function isMember(groupId: string, userId: string) {
 
   return Boolean(membership);
 }
+
+export async function getMemberIds(groupId: string) {
+  const rows = await db
+    .select({ userId: memberships.userId })
+    .from(memberships)
+    .where(eq(memberships.groupId, groupId));
+
+  return rows.map((row) => row.userId);
+}
