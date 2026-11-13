@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { auth } from "@/auth";
+import { currentUser } from "@/lib/session";
 import { getValidInvite, isMember } from "@/lib/data/groups";
 import { acceptInvite } from "@/lib/actions/groups";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -35,9 +35,9 @@ export default async function InvitePage({
     );
   }
 
-  const session = await auth();
+  const user = await currentUser();
 
-  if (session?.user && (await isMember(invite.groupId, session.user.id))) {
+  if (user && (await isMember(invite.groupId, user.id))) {
     return (
       <main className="grid flex-1 place-items-center px-4">
         <Card className="w-full max-w-sm">
@@ -63,7 +63,7 @@ export default async function InvitePage({
         <CardHeader>
           <CardTitle>Join {invite.groupName}?</CardTitle>
           <CardDescription>
-            {session?.user
+            {user
               ? "You'll be added as a member of this group"
               : "Log in or register first, then you can join"}
           </CardDescription>
@@ -72,7 +72,7 @@ export default async function InvitePage({
           <form action={acceptInvite}>
             <input type="hidden" name="token" value={token} />
             <Button type="submit" className="w-full">
-              {session?.user ? "Join group" : "Log in and join"}
+              {user ? "Join group" : "Log in and join"}
             </Button>
           </form>
         </CardContent>

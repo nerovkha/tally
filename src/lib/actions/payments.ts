@@ -4,9 +4,9 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { auth } from "@/auth";
 import { db } from "@/db";
 import { payments } from "@/db/schema";
+import { currentUser } from "@/lib/session";
 import { isMember } from "@/lib/data/groups";
 
 const createPaymentSchema = z.object({
@@ -19,8 +19,8 @@ const createPaymentSchema = z.object({
 export async function createPayment(
   input: unknown,
 ): Promise<{ error?: string }> {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  const user = await currentUser();
+  if (!user) redirect("/login");
 
   const parsed = createPaymentSchema.safeParse(input);
   if (!parsed.success) {
@@ -28,7 +28,7 @@ export async function createPayment(
   }
 
   const { groupId, toUserId, amountCents, note } = parsed.data;
-  const fromUserId = session.user.id;
+  const fromUserId = user.id;
 
   if (toUserId === fromUserId) {
     return { error: "You cannot pay yourself" };
@@ -54,8 +54,8 @@ export async function createPayment(
 }
 
 export async function deletePayment(paymentId: string) {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  const user = await currentUser();
+  if (!user) redirect("/login");
 
   const [payment] = await db
     .select({
@@ -67,7 +67,7 @@ export async function deletePayment(paymentId: string) {
     .where(eq(payments.id, paymentId))
     .limit(1);
 
-  if (!payment || payment.fromUserId !== session.user.id) return;
+  if (!payment || payment.fromUserId !== user.id) return;
 
   await db.delete(payments).where(eq(payments.id, paymentId));
   revalidatePath(`/groups/${payment.groupId}`);

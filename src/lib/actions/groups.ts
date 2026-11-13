@@ -5,9 +5,9 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { auth } from "@/auth";
 import { db } from "@/db";
 import { groups, invites, memberships } from "@/db/schema";
+import { currentUser } from "@/lib/session";
 import { isMember } from "@/lib/data/groups";
 
 const UUID_RE =
@@ -25,8 +25,8 @@ export async function createGroup(
   _prev: GroupFormState,
   formData: FormData,
 ): Promise<GroupFormState> {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  const user = await currentUser();
+  if (!user) redirect("/login");
 
   const parsed = groupNameSchema.safeParse(formData.get("name"));
   if (!parsed.success) {
@@ -36,12 +36,10 @@ export async function createGroup(
   const groupId = await db.transaction(async (tx) => {
     const [group] = await tx
       .insert(groups)
-      .values({ name: parsed.data, createdBy: session.user!.id })
+      .values({ name: parsed.data, createdBy: user.id })
       .returning({ id: groups.id });
 
-    await tx
-      .insert(memberships)
-      .values({ groupId: group.id, userId: session.user!.id });
+    await tx.insert(memberships).values({ groupId: group.id, userId: user.id });
 
     return group.id;
   });
@@ -51,8 +49,8 @@ export async function createGroup(
 }
 
 export async function deleteGroup(groupId: string) {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  const user = await currentUser();
+  if (!user) redirect("/login");
 
   if (!UUID_RE.test(groupId)) return;
 
@@ -62,7 +60,7 @@ export async function deleteGroup(groupId: string) {
     .where(eq(groups.id, groupId))
     .limit(1);
 
-  if (!group || group.createdBy !== session.user.id) return;
+  if (!group || group.createdBy !== user.id) return;
 
   await db.delete(groups).where(eq(groups.id, groupId));
   revalidatePath("/groups");
@@ -70,8 +68,8 @@ export async function deleteGroup(groupId: string) {
 }
 
 export async function leaveGroup(groupId: string) {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  const user = await currentUser();
+  if (!user) redirect("/login");
 
   if (!UUID_RE.test(groupId)) return;
 
@@ -83,7 +81,7 @@ export async function leaveGroup(groupId: string) {
   await db
     .delete(memberships)
     .where(
-      and(eq(memberships.groupId, groupId), eq(memberships.userId, session.user.id)),
+      and(eq(memberships.groupId, groupId), eq(memberships.userId, user.id)),
     );
 
   if (memberCount === 1) {
@@ -95,17 +93,17 @@ export async function leaveGroup(groupId: string) {
 }
 
 export async function createInvite(groupId: string) {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  const user = await currentUser();
+  if (!user) redirect("/login");
 
-  const member = await isMember(groupId, session.user.id);
+  const member = await isMember(groupId, user.id);
   if (!member) {
     return { error: "You are not a member of this group" };
   }
 
   const [invite] = await db
     .insert(invites)
-    .values({ groupId, createdBy: session.user.id })
+    .values({ groupId, createdBy: user.id })
     .returning({ id: invites.id });
 
   const headerList = await headers();
@@ -122,8 +120,8 @@ export async function acceptInvite(formData: FormData) {
 
   if (!UUID_RE.test(token)) redirect("/groups");
 
-  const session = await auth();
-  if (!session?.user?.id) {
+  const user = await currentUser();
+  if (!user) {
     redirect(`/login?callbackUrl=${encodeURIComponent(`/invite/${token}`)}`);
   }
 
@@ -142,7 +140,7 @@ export async function acceptInvite(formData: FormData) {
 
   await db
     .insert(memberships)
-    .values({ groupId: invite.groupId, userId: session!.user!.id })
+    .values({ groupId: invite.groupId, userId: user.id })
     .onConflictDoNothing();
 
   revalidatePath("/groups");

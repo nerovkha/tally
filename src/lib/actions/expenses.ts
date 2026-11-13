@@ -3,16 +3,16 @@
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { db } from "@/db";
 import { expenses, splits } from "@/db/schema";
+import { currentUser } from "@/lib/session";
 import { getMemberIds, isMember } from "@/lib/data/groups";
 import { splitAmounts } from "@/lib/splits";
 import { createExpenseSchema } from "@/lib/validation";
 
 export async function createExpense(input: unknown): Promise<{ error?: string }> {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  const user = await currentUser();
+  if (!user) redirect("/login");
 
   const parsed = createExpenseSchema.safeParse(input);
   if (!parsed.success) {
@@ -22,7 +22,7 @@ export async function createExpense(input: unknown): Promise<{ error?: string }>
   const { groupId, description, amountCents, splitType, participantIds } =
     parsed.data;
 
-  if (!(await isMember(groupId, session.user.id))) {
+  if (!(await isMember(groupId, user.id))) {
     return { error: "You are not a member of this group" };
   }
 
@@ -47,7 +47,7 @@ export async function createExpense(input: unknown): Promise<{ error?: string }>
       .insert(expenses)
       .values({
         groupId,
-        paidById: session.user!.id,
+        paidById: user.id,
         description,
         amountCents,
         splitType,
@@ -68,8 +68,8 @@ export async function createExpense(input: unknown): Promise<{ error?: string }>
 }
 
 export async function deleteExpense(expenseId: string, groupId: string) {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  const user = await currentUser();
+  if (!user) redirect("/login");
 
   const [expense] = await db
     .select({ id: expenses.id, paidById: expenses.paidById })
@@ -77,7 +77,7 @@ export async function deleteExpense(expenseId: string, groupId: string) {
     .where(and(eq(expenses.id, expenseId), eq(expenses.groupId, groupId)))
     .limit(1);
 
-  if (!expense || expense.paidById !== session.user.id) return;
+  if (!expense || expense.paidById !== user.id) return;
 
   await db.delete(expenses).where(eq(expenses.id, expenseId));
   revalidatePath(`/groups/${groupId}`);

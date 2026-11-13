@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { auth } from "@/auth";
+import { notFound, redirect } from "next/navigation";
+import { currentUser } from "@/lib/session";
 import { getGroupForUser } from "@/lib/data/groups";
 import { getExpensesForGroup } from "@/lib/data/expenses";
 import { getPaymentsForGroup } from "@/lib/data/payments";
@@ -47,15 +47,20 @@ export default async function GroupPage({
   params,
 }: PageProps<"/groups/[id]">) {
   const { id } = await params;
-  const session = await auth();
-  const data = await getGroupForUser(id, session!.user!.id);
+  const user = await currentUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const data = await getGroupForUser(id, user.id);
 
   if (!data) {
     notFound();
   }
 
   const { group, members, isCreator } = data;
-  const userId = session!.user!.id;
+  const userId = user.id;
   const expenses = await getExpensesForGroup(group.id);
   const payments = await getPaymentsForGroup(group.id);
 

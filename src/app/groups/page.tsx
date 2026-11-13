@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+import { currentUser } from "@/lib/session";
 import { getGroupsForUser } from "@/lib/data/groups";
 import { NewGroupDialog } from "@/components/new-group-dialog";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,8 +8,13 @@ import { Card, CardContent } from "@/components/ui/card";
 export const metadata = { title: "Groups — Tally" };
 
 export default async function GroupsPage() {
-  const session = await auth();
-  const groups = await getGroupsForUser(session!.user!.id);
+  const user = await currentUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const groups = await getGroupsForUser(user.id);
 
   return (
     <main className="py-8">

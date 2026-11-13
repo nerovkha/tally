@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { currentUser } from "@/lib/session";
 import { UserMenu } from "@/components/user-menu";
 
 export const dynamic = "force-dynamic";
@@ -8,9 +8,9 @@ export const dynamic = "force-dynamic";
 export default async function GroupsLayout({
   children,
 }: LayoutProps<"/groups">) {
-  const session = await auth();
+  const user = await currentUser();
 
-  if (!session?.user) {
+  if (!user) {
     redirect("/login");
   }
 
@@ -21,7 +21,7 @@ export default async function GroupsLayout({
           <Link href="/groups" className="text-lg font-semibold tracking-tight">
             Tally
           </Link>
-          <UserMenu name={session.user.name!} email={session.user.email!} />
+          <UserMenu name={user.name} email={user.email} />
         </div>
       </header>
       <div className="mx-auto w-full max-w-4xl flex-1 px-4">{children}</div>
