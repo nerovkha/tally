@@ -2,11 +2,13 @@ import { relations } from "drizzle-orm";
 import {
   index,
   integer,
+  numeric,
   pgTable,
   primaryKey,
   text,
   timestamp,
   uuid,
+  varchar,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -22,6 +24,9 @@ export const users = pgTable("users", {
 export const groups = pgTable("groups", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
+  baseCurrency: varchar("base_currency", { length: 3 })
+    .notNull()
+    .default("EUR"),
   createdBy: uuid("created_by")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
@@ -58,7 +63,12 @@ export const expenses = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     description: text("description").notNull(),
     amountCents: integer("amount_cents").notNull(),
-    splitType: text("split_type").notNull().default("equal"), // "equal" | "exact" | "percent"
+    currency: varchar("currency", { length: 3 }).notNull().default("EUR"),
+    // Multiplier from expenses.currency to groups.baseCurrency, captured at creation
+    fxRate: numeric("fx_rate", { precision: 16, scale: 8, mode: "number" })
+      .notNull()
+      .default(1),
+  splitType: text("split_type").notNull().default("equal"), // "equal" | "exact" | "percent"
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

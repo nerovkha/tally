@@ -15,6 +15,13 @@
       "when": 1794768206444,
       "tag": "0001_cute_pretty_boy",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794772118116,
+      "tag": "0002_charming_wendell_rand",
+      "breakpoints": true
     }
   ]
 }
