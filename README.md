@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tally
 
-## Getting Started
+Split expenses with friends, settle up, and stay even. A full-stack capstone
+built on top of the [Full Stack Open](https://fullstackopen.com) curriculum.
 
-First, run the development server:
+## Features
+
+- Register and log in with email and password (Auth.js v5, bcrypt)
+- Create groups and invite people with shareable links
+- Add expenses you paid for, split equally, by exact amounts, or by
+  percentages — written to Postgres in a single transaction
+- Per-member balances and suggested minimal settlements
+- Record payments between members and watch balances settle
+- Money handled as integer cents — no floating point surprises
+
+## Stack
+
+- [Next.js](https://nextjs.org) (App Router, server actions, TypeScript)
+- [Drizzle ORM](https://orm.drizzle.team) + PostgreSQL with SQL migrations
+- [Auth.js v5](https://authjs.dev) credentials authentication
+- [shadcn/ui](https://ui.shadcn.com) + Tailwind CSS v4
+- [Zod](https://zod.dev) validation shared by client and server
+- Vitest for unit tests, Playwright for end-to-end tests
+- GitHub Actions CI with a real Postgres service container
+
+## Getting started
+
+Requires Node 24+, Docker, and npm.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run db:up        # start Postgres in Docker
+npm run db:migrate   # apply Drizzle migrations
+npm run dev          # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Create a `.env.local` file:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+DATABASE_URL=postgres://tally:tally@localhost:5432/tally
+AUTH_SECRET=<generate with: openssl rand -base64 32>
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts
 
-## Learn More
+| Script | What it does |
+| --- | --- |
+| `npm run dev` | Start the Next.js dev server |
+| `npm run build` / `npm start` | Production build and serve |
+| `npm test` | Run Vitest unit tests (split, balance, money math) |
+| `npx playwright test` | Run e2e tests against a dev server with `E2E=1` |
+| `npm run db:up` / `db:down` | Start / stop the Postgres container |
+| `npm run db:generate` | Generate a migration from schema changes |
+| `npm run db:migrate` | Apply pending migrations |
+| `npm run db:studio` | Open Drizzle Studio |
 
-To learn more about Next.js, take a look at the following resources:
+The e2e suite resets the database through `/api/testing/reset`, which only
+exists when the server runs with `E2E=1`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deploying
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The app runs anywhere Node works. The simplest path is Vercel plus a managed
+Postgres (Neon, Supabase, or similar):
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Push the repo to GitHub and import it into Vercel
+2. Set `DATABASE_URL` (pooled connection string) and `AUTH_SECRET` in the
+   project's environment variables
+3. Run `npm run db:migrate` against the production database once
