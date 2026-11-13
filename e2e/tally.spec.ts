@@ -35,6 +35,10 @@ test.describe("tally", () => {
     await logoutUser(page, "A");
     await loginUser(page, "alice@test.dev", "password123");
     await expect(page.getByText("No groups yet")).toBeVisible();
+
+    await page.goto("/groups");
+    await expect(page.getByText("No groups yet")).toBeVisible();
+    await expect(page.getByText("Wrong email or password")).toHaveCount(0);
   });
 
   test("a user can create a group", async ({ page }) => {
