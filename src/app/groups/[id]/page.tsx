@@ -69,6 +69,7 @@ export default async function GroupPage({
     expenses.map((expense) => ({
       paidById: expense.paidById,
       amountCents: expense.amountCents,
+      fxRate: expense.fxRate,
       splits: expense.splits.map((split) => ({
         userId: split.userId,
         amountCents: split.amountCents,

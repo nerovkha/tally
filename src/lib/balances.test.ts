@@ -9,6 +9,7 @@ describe("computeNetBalances", () => {
         {
           paidById: "alice",
           amountCents: 3000,
+          fxRate: 1,
           splits: [
             { userId: "alice", amountCents: 1500 },
             { userId: "bob", amountCents: 1500 },
@@ -27,6 +28,7 @@ describe("computeNetBalances", () => {
         {
           paidById: "alice",
           amountCents: 3000,
+          fxRate: 1,
           splits: [
             { userId: "alice", amountCents: 1000 },
             { userId: "bob", amountCents: 1000 },
@@ -36,6 +38,7 @@ describe("computeNetBalances", () => {
         {
           paidById: "carol",
           amountCents: 1500,
+          fxRate: 1,
           splits: [
             { userId: "alice", amountCents: 750 },
             { userId: "carol", amountCents: 750 },
@@ -54,6 +57,7 @@ describe("computeNetBalances", () => {
         {
           paidById: "alice",
           amountCents: 2000,
+          fxRate: 1,
           splits: [
             { userId: "alice", amountCents: 1000 },
             { userId: "bob", amountCents: 1000 },
@@ -63,6 +67,76 @@ describe("computeNetBalances", () => {
       [{ fromUserId: "bob", toUserId: "alice", amountCents: 1000 }],
     );
     expect(net).toEqual({ alice: 0, bob: 0 });
+  });
+
+  it("converts foreign expenses at the captured rate", () => {
+    const net = computeNetBalances(
+      ["alice", "bob"],
+      [
+        {
+          paidById: "alice",
+          amountCents: 2000,
+          fxRate: 1.16,
+          splits: [
+            { userId: "alice", amountCents: 1000 },
+            { userId: "bob", amountCents: 1000 },
+          ],
+        },
+      ],
+      [],
+    );
+    expect(net).toEqual({ alice: 1160, bob: -1160 });
+  });
+
+  it("absorbs conversion rounding in the payer so balances net to zero", () => {
+    // 333 cents * 1.16 = 386.28 → each participant owes 386, total 772
+    const net = computeNetBalances(
+      ["alice", "bob"],
+      [
+        {
+          paidById: "alice",
+          amountCents: 666,
+          fxRate: 1.16,
+          splits: [
+            { userId: "alice", amountCents: 333 },
+            { userId: "bob", amountCents: 333 },
+          ],
+        },
+      ],
+      [],
+    );
+    expect(net).toEqual({ alice: 386, bob: -386 });
+    expect(Object.values(net).reduce((sum, cents) => sum + cents, 0)).toBe(0);
+  });
+
+  it("nets to zero across mixed-currency expenses and payments", () => {
+    const net = computeNetBalances(
+      ["alice", "bob", "carol"],
+      [
+        {
+          paidById: "alice",
+          amountCents: 9901,
+          fxRate: 1.0707,
+          splits: [
+            { userId: "alice", amountCents: 3301 },
+            { userId: "bob", amountCents: 3300 },
+            { userId: "carol", amountCents: 3300 },
+          ],
+        },
+        {
+          paidById: "carol",
+          amountCents: 5000,
+          fxRate: 0.8455,
+          splits: [
+            { userId: "bob", amountCents: 2500 },
+            { userId: "carol", amountCents: 2500 },
+          ],
+        },
+      ],
+      [{ fromUserId: "bob", toUserId: "alice", amountCents: 2000 }],
+    );
+    const total = Object.values(net).reduce((sum, cents) => sum + cents, 0);
+    expect(total).toBe(0);
   });
 });
 

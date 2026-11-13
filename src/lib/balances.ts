@@ -1,6 +1,8 @@
 export type ExpenseLike = {
   paidById: string;
   amountCents: number;
+  // Multiplier from the expense currency to the group base currency
+  fxRate: number;
   splits: { userId: string; amountCents: number }[];
 };
 
@@ -11,8 +13,13 @@ export type PaymentLike = {
 };
 
 /**
- * Net balance per member in cents. Positive means the group owes this
- * member money; negative means the member owes the group.
+ * Net balance per member in base-currency cents. Positive means the group
+ * owes this member money; negative means the member owes the group.
+ *
+ * Each expense's splits are converted to the base currency with the rate
+ * captured when the expense was created. The payer is credited with the
+ * sum of the converted splits, so per-expense rounding is absorbed by the
+ * payer and every expense still nets out to exactly zero.
  */
 export function computeNetBalances(
   memberIds: string[],
@@ -22,13 +29,16 @@ export function computeNetBalances(
   const net = Object.fromEntries(memberIds.map((id) => [id, 0]));
 
   for (const expense of expenses) {
-    if (net[expense.paidById] !== undefined) {
-      net[expense.paidById] += expense.amountCents;
-    }
+    let convertedTotal = 0;
     for (const split of expense.splits) {
+      const converted = Math.round(split.amountCents * expense.fxRate);
+      convertedTotal += converted;
       if (net[split.userId] !== undefined) {
-        net[split.userId] -= split.amountCents;
+        net[split.userId] -= converted;
       }
+    }
+    if (net[expense.paidById] !== undefined) {
+      net[expense.paidById] += convertedTotal;
     }
   }
 
