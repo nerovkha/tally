@@ -125,4 +125,40 @@ test.describe("tally", () => {
     await expect(page.getByText("settled up")).toHaveCount(2);
     await expect(page.getByText("Bob paid Alice €15.25")).toBeVisible();
   });
+
+  test("a foreign currency expense converts into the group base currency", async ({ page }) => {
+    await registerUser(page, "Alice", "alice@test.dev", "password123");
+    await createGroupViaUi(page, "Iceland trip");
+    const inviteUrl = await getInviteLink(page);
+    await page.keyboard.press("Escape");
+    await logoutUser(page, "A");
+
+    await registerUser(page, "Bob", "bob@test.dev", "password123");
+    await page.goto(inviteUrl);
+    await page.getByRole("button", { name: "Join group" }).click();
+    await logoutUser(page, "B");
+
+    await loginUser(page, "alice@test.dev", "password123");
+    await page.getByRole("link", { name: "Iceland trip" }).click();
+
+    await page.getByRole("button", { name: "Add expense" }).click();
+    const dialog = page.getByRole("dialog");
+    await page.locator("#description").fill("Hostel night");
+    await page.locator("#amount").fill("100");
+    await page.locator("#expense-currency").click();
+    await page.getByRole("option", { name: "USD", exact: true }).click();
+
+    const rateInput = page.locator("#fx-rate");
+    await expect(rateInput).toBeVisible();
+    await expect(rateInput).toBeEnabled({ timeout: 10000 });
+    await rateInput.fill("1.10");
+    await expect(dialog.getByText("Counts as €110.00")).toBeVisible();
+
+    await dialog.getByRole("button", { name: "Add expense" }).click();
+
+    await expect(page.getByText("US$100.00").first()).toBeVisible();
+    await expect(page.getByText("≈ €110.00").first()).toBeVisible();
+    await expect(page.getByText("gets €55.00")).toBeVisible();
+    await expect(page.getByText("owes €55.00")).toBeVisible();
+  });
 });
