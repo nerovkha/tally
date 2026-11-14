@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { currentUser } from "@/lib/session";
+import {
+  categoryBySlug,
+  categoryTotals,
+  isCategorySlug,
+} from "@/lib/categories";
 import { getGroupForUser } from "@/lib/data/groups";
 import { getExpensesForGroup } from "@/lib/data/expenses";
 import { getPaymentsForGroup } from "@/lib/data/payments";
@@ -52,8 +57,12 @@ function balanceLabel(net: number, currency: string) {
 
 export default async function GroupPage({
   params,
+  searchParams,
 }: PageProps<"/groups/[id]">) {
   const { id } = await params;
+  const { category } = await searchParams;
+  const activeCategory =
+    typeof category === "string" && isCategorySlug(category) ? category : null;
   const user = await currentUser();
 
   if (!user) {
@@ -86,6 +95,20 @@ export default async function GroupPage({
     payments,
   );
   const transfers = settlementTransfers(net);
+  const totals = categoryTotals(
+    expenses.map((expense) => ({
+      category: expense.category,
+      amountCents: expense.amountCents,
+      fxRate: expense.fxRate,
+    })),
+  );
+  const presentCategories = [...new Set(expenses.map((e) => e.category))]
+    .filter(isCategorySlug)
+    .map((slug) => categoryBySlug(slug))
+    .filter((meta) => meta !== undefined);
+  const visibleExpenses = activeCategory
+    ? expenses.filter((expense) => expense.category === activeCategory)
+    : expenses;
   const nameById = new Map(members.map((member) => [member.id, member.name]));
   const memberOptions = members.map(({ id: memberId, name }) => ({
     id: memberId,
@@ -194,6 +217,31 @@ export default async function GroupPage({
 
       <Separator className="my-8" />
 
+      {expenses.length > 0 && (
+        <section>
+          <h2 className="text-sm font-medium text-muted-foreground">
+            Spending by category
+          </h2>
+          <ul className="mt-4 space-y-2">
+            {totals.slice(0, 6).map(({ category: slug, cents }) => {
+              const meta = categoryBySlug(slug);
+              return (
+                <li key={slug} className="flex items-center justify-between">
+                  <span className="text-sm">
+                    {meta?.emoji} {meta?.name ?? slug}
+                  </span>
+                  <span className="text-sm font-medium">
+                    {formatMoney(cents, base)}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      <Separator className="my-8" />
+
       <section>
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-medium text-muted-foreground">
@@ -207,13 +255,43 @@ export default async function GroupPage({
           />
         </div>
 
-        {expenses.length === 0 ? (
+        {presentCategories.length > 1 && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              href={`/groups/${group.id}`}
+              className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                activeCategory
+                  ? "text-muted-foreground hover:border-foreground/25"
+                  : "border-foreground/30 bg-secondary"
+              }`}
+            >
+              All
+            </Link>
+            {presentCategories.map((meta) => (
+              <Link
+                key={meta.slug}
+                href={`/groups/${group.id}?category=${meta.slug}`}
+                className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                  activeCategory === meta.slug
+                    ? "border-foreground/30 bg-secondary"
+                    : "text-muted-foreground hover:border-foreground/25"
+                }`}
+              >
+                {meta.emoji} {meta.name}
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {visibleExpenses.length === 0 ? (
           <p className="mt-16 text-center text-muted-foreground">
-            No expenses yet
+            {activeCategory
+              ? "No expenses in this category"
+              : "No expenses yet"}
           </p>
         ) : (
           <ul className="mt-4 divide-y">
-            {expenses.map((expense) => {
+            {visibleExpenses.map((expense) => {
               const myShare = expense.splits.find(
                 (split) => split.user.id === userId,
               )?.amountCents;
@@ -227,6 +305,9 @@ export default async function GroupPage({
                 >
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium">
+                      <span className="mr-1" aria-hidden>
+                        {categoryBySlug(expense.category)?.emoji ?? "🧾"}
+                      </span>
                       {expense.description}
                     </div>
                     <div className="text-xs text-muted-foreground">

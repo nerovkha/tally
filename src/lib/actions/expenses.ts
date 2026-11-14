@@ -25,6 +25,7 @@ export async function createExpense(input: unknown): Promise<{ error?: string }>
     description,
     amountCents,
     currency,
+    category,
     splitType,
     participantIds,
   } = parsed.data;
@@ -83,6 +84,7 @@ export async function createExpense(input: unknown): Promise<{ error?: string }>
         amountCents,
         currency,
         fxRate,
+        category,
         splitType,
       })
       .returning({ id: expenses.id });

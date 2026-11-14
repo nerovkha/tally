@@ -4,6 +4,11 @@ import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { createExpense } from "@/lib/actions/expenses";
 import { getFxQuote } from "@/lib/actions/fx";
+import {
+  CATEGORIES,
+  DEFAULT_CATEGORY,
+  type CategorySlug,
+} from "@/lib/categories";
 import { CURRENCIES } from "@/lib/currencies";
 import { convertCents } from "@/lib/fx";
 import { formatMoney, moneySymbol, parseAmountToCents } from "@/lib/format";
@@ -47,6 +52,7 @@ export function ExpenseDialog({
   const [ratePending, startRateTransition] = useTransition();
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState<CategorySlug>(DEFAULT_CATEGORY);
   const [currency, setCurrency] = useState(baseCurrency);
   const [fxRate, setFxRate] = useState("1");
   const [splitType, setSplitType] = useState<SplitType>("equal");
@@ -58,6 +64,7 @@ export function ExpenseDialog({
     if (!next) {
       setDescription("");
       setAmount("");
+      setCategory(DEFAULT_CATEGORY);
       setCurrency(baseCurrency);
       setFxRate("1");
       setSplitType("equal");
@@ -154,6 +161,7 @@ export function ExpenseDialog({
         amountCents: cents,
         currency,
         fxRate: foreign ? (rate ?? undefined) : undefined,
+        category,
         splitType,
         participantIds: selected,
         values: numericValues,
@@ -189,6 +197,25 @@ export function ExpenseDialog({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Groceries, taxi, dinner…"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="expense-category">Category</Label>
+            <Select
+              value={category}
+              onValueChange={(value) => setCategory(value as CategorySlug)}
+            >
+              <SelectTrigger id="expense-category" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORIES.map((entry) => (
+                  <SelectItem key={entry.slug} value={entry.slug}>
+                    {entry.emoji} {entry.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

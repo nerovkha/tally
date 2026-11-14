@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CATEGORY_SLUGS, DEFAULT_CATEGORY } from "./categories";
 import { CURRENCY_CODES } from "./currencies";
 
 export const registerSchema = z.object({
@@ -20,6 +21,9 @@ export const createExpenseSchema = z.object({
     .enum(CURRENCY_CODES, { error: "Pick a supported currency" })
     .default("EUR"),
   fxRate: z.number().finite().positive().max(10000).optional(),
+  category: z
+    .enum(CATEGORY_SLUGS, { error: "Pick a supported category" })
+    .default(DEFAULT_CATEGORY),
   splitType: z.enum(["equal", "exact", "percent"]),
   participantIds: z
     .array(z.string().uuid())
