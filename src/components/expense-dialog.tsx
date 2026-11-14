@@ -3,7 +3,10 @@
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { createExpense } from "@/lib/actions/expenses";
-import { formatMoney, parseAmountToCents } from "@/lib/format";
+import { getFxQuote } from "@/lib/actions/fx";
+import { CURRENCIES } from "@/lib/currencies";
+import { convertCents } from "@/lib/fx";
+import { formatMoney, moneySymbol, parseAmountToCents } from "@/lib/format";
 import { splitAmounts, type SplitType } from "@/lib/splits";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,6 +21,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Member = { id: string; name: string };
 
@@ -25,15 +35,20 @@ export function ExpenseDialog({
   groupId,
   members,
   currentUserId,
+  baseCurrency,
 }: {
   groupId: string;
   members: Member[];
   currentUserId: string;
+  baseCurrency: string;
 }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [ratePending, startRateTransition] = useTransition();
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState(baseCurrency);
+  const [fxRate, setFxRate] = useState("1");
   const [splitType, setSplitType] = useState<SplitType>("equal");
   const [selected, setSelected] = useState<string[]>(members.map((m) => m.id));
   const [values, setValues] = useState<Record<string, string>>({});
@@ -43,11 +58,38 @@ export function ExpenseDialog({
     if (!next) {
       setDescription("");
       setAmount("");
+      setCurrency(baseCurrency);
+      setFxRate("1");
       setSplitType("equal");
       setSelected(members.map((m) => m.id));
       setValues({});
     }
   }
+
+  function handleCurrencyChange(code: string) {
+    setCurrency(code);
+    if (code === baseCurrency) {
+      setFxRate("1");
+      return;
+    }
+    setFxRate("");
+    startRateTransition(async () => {
+      const quote = await getFxQuote(code, baseCurrency);
+      if (quote.rate) {
+        setFxRate(String(quote.rate));
+      } else {
+        toast.error(quote.error ?? "Could not load an exchange rate");
+        setFxRate("1");
+      }
+    });
+  }
+
+  const rate = useMemo(() => {
+    const parsed = Number(fxRate);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  }, [fxRate]);
+
+  const foreign = currency !== baseCurrency;
 
   const preview = useMemo(() => {
     const cents = parseAmountToCents(amount);
@@ -64,6 +106,12 @@ export function ExpenseDialog({
     return splitAmounts(cents, splitType, selected, numeric);
   }, [amount, splitType, selected, values]);
 
+  const basePreview = useMemo(() => {
+    const cents = parseAmountToCents(amount);
+    if (cents === null || !foreign || rate === null) return null;
+    return convertCents(cents, rate);
+  }, [amount, foreign, rate]);
+
   function toggle(id: string, checked: boolean) {
     setSelected((prev) =>
       checked ? [...prev, id] : prev.filter((x) => x !== id),
@@ -78,6 +126,10 @@ export function ExpenseDialog({
     }
     if (!description.trim()) {
       toast.error("Description is required");
+      return;
+    }
+    if (foreign && rate === null) {
+      toast.error("Enter a valid exchange rate");
       return;
     }
     if (!preview || !preview.ok) {
@@ -100,6 +152,8 @@ export function ExpenseDialog({
         groupId,
         description: description.trim(),
         amountCents: cents,
+        currency,
+        fxRate: foreign ? (rate ?? undefined) : undefined,
         splitType,
         participantIds: selected,
         values: numericValues,
@@ -139,13 +193,52 @@ export function ExpenseDialog({
 
           <div className="space-y-2">
             <Label htmlFor="amount">Amount</Label>
-            <Input
-              id="amount"
-              inputMode="decimal"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="24.50"
-            />
+            <div className="flex gap-2">
+              <Input
+                id="amount"
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="24.50"
+              />
+              <Select
+                value={currency}
+                onValueChange={handleCurrencyChange}
+                disabled={ratePending}
+              >
+                <SelectTrigger id="expense-currency" className="w-28">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CURRENCIES.map((entry) => (
+                    <SelectItem key={entry.code} value={entry.code}>
+                      {entry.code}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {foreign && (
+              <div className="space-y-2 rounded-lg border p-3">
+                <Label htmlFor="fx-rate">
+                  Rate to {baseCurrency} (1 {currency} =)
+                </Label>
+                <Input
+                  id="fx-rate"
+                  inputMode="decimal"
+                  value={fxRate}
+                  onChange={(e) => setFxRate(e.target.value)}
+                  placeholder="1.16"
+                  disabled={ratePending}
+                />
+                {basePreview !== null && (
+                  <p className="text-sm text-muted-foreground">
+                    Counts as {formatMoney(basePreview, baseCurrency)} in group
+                    balances
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -200,14 +293,16 @@ export function ExpenseDialog({
                           [member.id]: e.target.value,
                         }))
                       }
-                      placeholder={splitType === "percent" ? "%" : "€"}
+                      placeholder={
+                        splitType === "percent" ? "%" : moneySymbol(currency)
+                      }
                     />
                   )}
                   {splitType === "equal" &&
                     preview?.ok &&
                     selected.includes(member.id) && (
                       <span className="text-sm text-muted-foreground">
-                        {formatMoney(preview.amounts[member.id])}
+                        {formatMoney(preview.amounts[member.id], currency)}
                       </span>
                     )}
                 </li>

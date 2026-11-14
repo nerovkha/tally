@@ -8,6 +8,7 @@ import {
   computeNetBalances,
   settlementTransfers,
 } from "@/lib/balances";
+import { convertCents } from "@/lib/fx";
 import { formatDay, formatMoney } from "@/lib/format";
 import {
   DeleteGroupButton,
@@ -33,12 +34,18 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-function balanceLabel(net: number) {
+function balanceLabel(net: number, currency: string) {
   if (net > 0) {
-    return { text: `gets ${formatMoney(net)}`, className: "text-emerald-600" };
+    return {
+      text: `gets ${formatMoney(net, currency)}`,
+      className: "text-emerald-600",
+    };
   }
   if (net < 0) {
-    return { text: `owes ${formatMoney(-net)}`, className: "text-red-600" };
+    return {
+      text: `owes ${formatMoney(-net, currency)}`,
+      className: "text-red-600",
+    };
   }
   return { text: "settled up", className: "text-muted-foreground" };
 }
@@ -61,6 +68,7 @@ export default async function GroupPage({
 
   const { group, members, isCreator } = data;
   const userId = user.id;
+  const base = group.baseCurrency;
   const expenses = await getExpensesForGroup(group.id);
   const payments = await getPaymentsForGroup(group.id);
 
@@ -94,7 +102,10 @@ export default async function GroupPage({
       </Link>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">{group.name}</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-semibold">{group.name}</h1>
+          <Badge variant="outline">{base}</Badge>
+        </div>
         <div className="flex gap-2">
           <InviteDialog groupId={group.id} />
           {isCreator ? (
@@ -133,12 +144,13 @@ export default async function GroupPage({
             groupId={group.id}
             members={memberOptions}
             currentUserId={userId}
+            currency={base}
           />
         </div>
 
         <ul className="mt-4 space-y-2">
           {members.map((member) => {
-            const balance = balanceLabel(net[member.id] ?? 0);
+            const balance = balanceLabel(net[member.id] ?? 0, base);
             return (
               <li key={member.id} className="flex items-center justify-between">
                 <span className="text-sm">{member.name}</span>
@@ -163,7 +175,7 @@ export default async function GroupPage({
                     {nameById.get(transfer.fromUserId)} pays{" "}
                     {nameById.get(transfer.toUserId)}{" "}
                     <span className="font-medium">
-                      {formatMoney(transfer.amountCents)}
+                      {formatMoney(transfer.amountCents, base)}
                     </span>
                   </span>
                   {transfer.fromUserId === userId && (
@@ -191,6 +203,7 @@ export default async function GroupPage({
             groupId={group.id}
             members={memberOptions}
             currentUserId={userId}
+            baseCurrency={base}
           />
         </div>
 
@@ -205,6 +218,7 @@ export default async function GroupPage({
                 (split) => split.user.id === userId,
               )?.amountCents;
               const canDelete = expense.paidBy.id === userId;
+              const foreign = expense.currency !== base;
 
               return (
                 <li
@@ -217,12 +231,15 @@ export default async function GroupPage({
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {expense.paidBy.name} paid · {formatDay(expense.createdAt)}
-                      {myShare !== undefined && ` · Your share ${formatMoney(myShare)}`}
+                      {myShare !== undefined &&
+                        ` · Your share ${formatMoney(myShare, expense.currency)}`}
+                      {foreign &&
+                        ` · ≈ ${formatMoney(convertCents(expense.amountCents, expense.fxRate), base)}`}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="font-medium">
-                      {formatMoney(expense.amountCents)}
+                      {formatMoney(expense.amountCents, expense.currency)}
                     </span>
                     {canDelete && (
                       <DeleteExpenseButton
@@ -254,7 +271,7 @@ export default async function GroupPage({
                   <div className="min-w-0">
                     <div className="text-sm font-medium">
                       {payment.fromUser.name} paid {payment.toUser.name}{" "}
-                      {formatMoney(payment.amountCents)}
+                      {formatMoney(payment.amountCents, base)}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {formatDay(payment.createdAt)}

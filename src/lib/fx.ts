@@ -1,4 +1,4 @@
-import { isSupportedCurrency, type CurrencyCode } from "./currencies";
+import { isSupportedCurrency } from "./currencies";
 
 /**
  * Rates relative to one euro. The static table is only a fallback for when
@@ -80,8 +80,8 @@ export function crossRate(table: EurTable, from: string, to: string): number | n
 }
 
 export async function getFxRate(
-  from: CurrencyCode,
-  to: CurrencyCode,
+  from: string,
+  to: string,
   fetcher: Fetcher = defaultFetcher,
 ): Promise<number> {
   if (from === to) return 1;

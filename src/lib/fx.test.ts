@@ -69,7 +69,7 @@ describe("getFxRate", () => {
 
   it("throws for unsupported currencies", async () => {
     await expect(
-      getFxRate("XXX" as "USD", "EUR", async () => ({ rates: {} })),
+      getFxRate("XXX", "EUR", async () => ({ rates: {} })),
     ).rejects.toThrow("No exchange rate available");
   });
 });

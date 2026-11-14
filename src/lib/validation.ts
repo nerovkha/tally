@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CURRENCY_CODES } from "./currencies";
 
 export const registerSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
@@ -15,6 +16,10 @@ export const createExpenseSchema = z.object({
   groupId: z.string().uuid(),
   description: z.string().trim().min(1, "Description is required").max(200),
   amountCents: z.number().int().positive("Enter a valid amount"),
+  currency: z
+    .enum(CURRENCY_CODES, { error: "Pick a supported currency" })
+    .default("EUR"),
+  fxRate: z.number().finite().positive().max(10000).optional(),
   splitType: z.enum(["equal", "exact", "percent"]),
   participantIds: z
     .array(z.string().uuid())

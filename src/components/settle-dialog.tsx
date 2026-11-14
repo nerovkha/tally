@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { createPayment } from "@/lib/actions/payments";
-import { formatMoney, parseAmountToCents } from "@/lib/format";
+import { formatMoney, moneySymbol, parseAmountToCents } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,10 +29,12 @@ export function SettleDialog({
   groupId,
   members,
   currentUserId,
+  currency,
 }: {
   groupId: string;
   members: Member[];
   currentUserId: string;
+  currency: string;
 }) {
   const [open, setOpen] = useState(false);
   const [toUserId, setToUserId] = useState<string | null>(null);
@@ -85,7 +87,7 @@ export function SettleDialog({
         <DialogHeader>
           <DialogTitle>Settle up</DialogTitle>
           <DialogDescription>
-            Record a payment you made to another member
+            Record a payment you made to another member in {currency}
           </DialogDescription>
         </DialogHeader>
 
@@ -113,11 +115,11 @@ export function SettleDialog({
               inputMode="decimal"
               value={amount}
               onChange={(event) => setAmount(event.target.value)}
-              placeholder="15.25"
+              placeholder={moneySymbol(currency)}
             />
             {centsPreview(amount) !== null && toName && (
               <p className="text-sm text-muted-foreground">
-                You paid {toName} {formatMoney(centsPreview(amount)!)}
+                You paid {toName} {formatMoney(centsPreview(amount)!, currency)}
               </p>
             )}
           </div>
