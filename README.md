@@ -9,6 +9,9 @@ built on top of the [Full Stack Open](https://fullstackopen.com) curriculum.
 - Create groups and invite people with shareable links
 - Add expenses you paid for, split equally, by exact amounts, or by
   percentages — written to Postgres in a single transaction
+- Multi-currency: each group settles in a base currency, expenses can be in
+  any of 28 currencies, and the exchange rate is captured at creation so
+  historical balances never drift
 - Per-member balances and suggested minimal settlements
 - Record payments between members and watch balances settle
 - Money handled as integer cents — no floating point surprises
