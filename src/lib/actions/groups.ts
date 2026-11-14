@@ -9,17 +9,23 @@ import { db } from "@/db";
 import { groups, invites, memberships } from "@/db/schema";
 import { currentUser } from "@/lib/session";
 import { isMember } from "@/lib/data/groups";
+import { CURRENCY_CODES } from "@/lib/currencies";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type GroupFormState = { error?: string };
 
-const groupNameSchema = z
-  .string()
-  .trim()
-  .min(1, "Group name is required")
-  .max(60, "Keep the name under 60 characters");
+const createGroupSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Group name is required")
+    .max(60, "Keep the name under 60 characters"),
+  currency: z
+    .enum(CURRENCY_CODES, { error: "Pick a supported currency" })
+    .default("EUR"),
+});
 
 export async function createGroup(
   _prev: GroupFormState,
@@ -28,7 +34,10 @@ export async function createGroup(
   const user = await currentUser();
   if (!user) redirect("/login");
 
-  const parsed = groupNameSchema.safeParse(formData.get("name"));
+  const parsed = createGroupSchema.safeParse({
+    name: formData.get("name"),
+    currency: formData.get("currency") ?? undefined,
+  });
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
   }
@@ -36,7 +45,11 @@ export async function createGroup(
   const groupId = await db.transaction(async (tx) => {
     const [group] = await tx
       .insert(groups)
-      .values({ name: parsed.data, createdBy: user.id })
+      .values({
+        name: parsed.data.name,
+        baseCurrency: parsed.data.currency,
+        createdBy: user.id,
+      })
       .returning({ id: groups.id });
 
     await tx.insert(memberships).values({ groupId: group.id, userId: user.id });

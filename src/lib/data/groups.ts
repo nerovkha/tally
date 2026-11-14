@@ -7,6 +7,7 @@ export async function getGroupsForUser(userId: string) {
     .select({
       id: groups.id,
       name: groups.name,
+      baseCurrency: groups.baseCurrency,
       createdAt: groups.createdAt,
     })
     .from(memberships)

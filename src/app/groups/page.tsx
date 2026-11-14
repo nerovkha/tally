@@ -39,7 +39,8 @@ export default async function GroupsPage() {
                   <div className="font-medium">{group.name}</div>
                   <div className="text-sm text-muted-foreground">
                     {group.memberCount}{" "}
-                    {group.memberCount === 1 ? "member" : "members"}
+                    {group.memberCount === 1 ? "member" : "members"} ·{" "}
+                    {group.baseCurrency}
                   </div>
                 </CardContent>
               </Card>
