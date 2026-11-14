@@ -63,6 +63,7 @@ export const expenses = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     description: text("description").notNull(),
     amountCents: integer("amount_cents").notNull(),
+    category: varchar("category", { length: 24 }).notNull().default("general"),
     currency: varchar("currency", { length: 3 }).notNull().default("EUR"),
     // Multiplier from expenses.currency to groups.baseCurrency, captured at creation
     fxRate: numeric("fx_rate", { precision: 16, scale: 8, mode: "number" })

@@ -1,0 +1,1 @@
+ALTER TABLE "expenses" ADD COLUMN "category" varchar(24) DEFAULT 'general' NOT NULL;
