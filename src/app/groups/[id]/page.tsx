@@ -23,6 +23,7 @@ import {
 } from "@/components/group-danger-buttons";
 import { ExpenseDialog } from "@/components/expense-dialog";
 import { DeleteExpenseButton } from "@/components/delete-expense-button";
+import { CommentButton } from "@/components/comment-button";
 import { DeletePaymentButton } from "@/components/delete-payment-button";
 import { InviteDialog } from "@/components/invite-dialog";
 import { SettleButton } from "@/components/settle-button";
@@ -325,6 +326,12 @@ export default async function GroupPage({
                     <span className="font-medium">
                       {formatMoney(expense.amountCents, expense.currency)}
                     </span>
+                    <CommentButton
+                      expenseId={expense.id}
+                      expenseLabel={expense.description}
+                      comments={expense.comments}
+                      currentUserId={userId}
+                    />
                     {canDelete && (
                       <DeleteExpenseButton
                         expenseId={expense.id}

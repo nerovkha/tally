@@ -1,6 +1,6 @@
-import { desc, eq } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { expenses } from "@/db/schema";
+import { comments, expenses } from "@/db/schema";
 
 export async function getExpensesForGroup(groupId: string) {
   return db.query.expenses.findMany({
@@ -10,6 +10,10 @@ export async function getExpensesForGroup(groupId: string) {
     with: {
       paidBy: { columns: { id: true, name: true } },
       splits: { with: { user: { columns: { id: true, name: true } } } },
+      comments: {
+        with: { user: { columns: { id: true, name: true } } },
+        orderBy: [asc(comments.createdAt)],
+      },
     },
   });
 }
