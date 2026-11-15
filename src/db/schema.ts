@@ -141,6 +141,33 @@ export const invites = pgTable(
   (t) => [index("invites_group_id_idx").on(t.groupId)],
 );
 
+export const activities = pgTable(
+  "activities",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    groupId: uuid("group_id")
+      .notNull()
+      .references(() => groups.id, { onDelete: "cascade" }),
+    actorId: uuid("actor_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // See ACTIVITY_TYPES in src/lib/activities.ts
+    type: text("type").notNull(),
+    expenseId: uuid("expense_id").references(() => expenses.id, {
+      onDelete: "cascade",
+    }),
+    paymentId: uuid("payment_id").references(() => payments.id, {
+      onDelete: "cascade",
+    }),
+    // Human-readable snapshot written when the event happened
+    detail: text("detail"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("activities_group_id_idx").on(t.groupId)],
+);
+
 export const groupsRelations = relations(groups, ({ one, many }) => ({
   createdByUser: one(users, {
     fields: [groups.createdBy],
@@ -188,6 +215,19 @@ export const invitesRelations = relations(invites, ({ one }) => ({
   }),
 }));
 
+export const activitiesRelations = relations(activities, ({ one }) => ({
+  group: one(groups, { fields: [activities.groupId], references: [groups.id] }),
+  actor: one(users, { fields: [activities.actorId], references: [users.id] }),
+  expense: one(expenses, {
+    fields: [activities.expenseId],
+    references: [expenses.id],
+  }),
+  payment: one(payments, {
+    fields: [activities.paymentId],
+    references: [payments.id],
+  }),
+}));
+
 export type User = typeof users.$inferSelect;
 export type Group = typeof groups.$inferSelect;
 export type Membership = typeof memberships.$inferSelect;
@@ -195,3 +235,4 @@ export type Expense = typeof expenses.$inferSelect;
 export type Split = typeof splits.$inferSelect;
 export type Payment = typeof payments.$inferSelect;
 export type Invite = typeof invites.$inferSelect;
+export type Activity = typeof activities.$inferSelect;

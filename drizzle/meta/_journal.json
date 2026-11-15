@@ -29,6 +29,13 @@
       "when": 1794772656882,
       "tag": "0003_wealthy_vanisher",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794772978320,
+      "tag": "0004_curved_justin_hammer",
+      "breakpoints": true
     }
   ]
 }
