@@ -226,4 +226,27 @@ test.describe("tally", () => {
       page.getByText("Alice added “Groceries” · €30.50"),
     ).toBeVisible();
   });
+
+  test("members can comment on an expense and delete their comments", async ({ page }) => {
+    await registerUser(page, "Alice", "alice@test.dev", "password123");
+    await createGroupViaUi(page, "Iceland trip");
+
+    await page.getByRole("button", { name: "Add expense" }).click();
+    await page.locator("#description").fill("Groceries");
+    await page.locator("#amount").fill("30.50");
+    await page.getByRole("dialog").getByRole("button", { name: "Add expense" }).click();
+    const list = page.locator("#expenses-list");
+    await expect(list.getByText("Groceries")).toBeVisible();
+
+    await page.getByRole("button", { name: "Comments on Groceries" }).click();
+    await expect(page.getByText("No comments yet")).toBeVisible();
+
+    await page.locator("[id^='comment-body-']").fill("Split this with the others too");
+    await page.getByRole("dialog").getByRole("button", { name: "Post" }).click();
+    await expect(page.getByText("Alice Split this with the others too")).toBeVisible();
+
+    await page.getByRole("button", { name: "Delete comment" }).click();
+    await expect(page.getByText("Split this with the others too")).toHaveCount(0);
+    await expect(page.getByText("No comments yet")).toBeVisible();
+  });
 });
