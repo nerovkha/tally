@@ -293,7 +293,7 @@ export default async function GroupPage({
               : "No expenses yet"}
           </p>
         ) : (
-          <ul className="mt-4 divide-y">
+          <ul id="expenses-list" className="mt-4 divide-y">
             {visibleExpenses.map((expense) => {
               const myShare = expense.splits.find(
                 (split) => split.user.id === userId,

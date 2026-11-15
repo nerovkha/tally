@@ -90,7 +90,8 @@ test.describe("tally", () => {
     await page.locator("#amount").fill("30.50");
     await dialog.getByRole("button", { name: "Add expense" }).click();
 
-    await expect(page.getByText("Groceries")).toBeVisible();
+    const list = page.locator("#expenses-list");
+    await expect(list.getByText("Groceries")).toBeVisible();
     await expect(page.getByText("€30.50").first()).toBeVisible();
     await expect(page.getByText("gets €15.25")).toBeVisible();
     await expect(page.getByText("owes €15.25")).toBeVisible();
@@ -123,7 +124,7 @@ test.describe("tally", () => {
     await page.getByRole("button", { name: "Record payment" }).click();
 
     await expect(page.getByText("settled up")).toHaveCount(2);
-    await expect(page.getByText("Bob paid Alice €15.25")).toBeVisible();
+    await expect(page.getByText("Bob paid Alice €15.25").first()).toBeVisible();
   });
 
   test("a foreign currency expense converts into the group base currency", async ({ page }) => {
@@ -166,13 +167,14 @@ test.describe("tally", () => {
     await registerUser(page, "Alice", "alice@test.dev", "password123");
     await createGroupViaUi(page, "Iceland trip");
 
+    const list = page.locator("#expenses-list");
     await page.getByRole("button", { name: "Add expense" }).click();
     await page.locator("#description").fill("Bonus groceries");
     await page.locator("#amount").fill("40");
     await page.locator("#expense-category").click();
     await page.getByRole("option", { name: "🛒 Groceries" }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Add expense" }).click();
-    await expect(page.getByText("Bonus groceries")).toBeVisible();
+    await expect(list.getByText("Bonus groceries")).toBeVisible();
 
     await page.getByRole("button", { name: "Add expense" }).click();
     await page.locator("#description").fill("Taxi to hostel");
@@ -180,7 +182,7 @@ test.describe("tally", () => {
     await page.locator("#expense-category").click();
     await page.getByRole("option", { name: "🚕 Transport" }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Add expense" }).click();
-    await expect(page.getByText("Taxi to hostel")).toBeVisible();
+    await expect(list.getByText("Taxi to hostel")).toBeVisible();
 
     await expect(
       page.getByRole("listitem").filter({ hasText: "🛒 Groceries" }),
@@ -190,10 +192,38 @@ test.describe("tally", () => {
     ).toContainText("€12.00");
 
     await page.getByRole("link", { name: "🚕 Transport" }).click();
-    await expect(page.getByText("Taxi to hostel")).toBeVisible();
-    await expect(page.getByText("Bonus groceries")).toHaveCount(0);
+    await expect(list.getByText("Taxi to hostel")).toBeVisible();
+    await expect(list.getByText("Bonus groceries")).toHaveCount(0);
 
     await page.getByRole("link", { name: "All", exact: true }).click();
-    await expect(page.getByText("Bonus groceries")).toBeVisible();
+    await expect(list.getByText("Bonus groceries")).toBeVisible();
+  });
+
+  test("the group page shows an activity timeline", async ({ page }) => {
+    await registerUser(page, "Alice", "alice@test.dev", "password123");
+    await createGroupViaUi(page, "Iceland trip");
+    const inviteUrl = await getInviteLink(page);
+    await page.keyboard.press("Escape");
+    await logoutUser(page, "A");
+
+    await registerUser(page, "Bob", "bob@test.dev", "password123");
+    await page.goto(inviteUrl);
+    await page.getByRole("button", { name: "Join group" }).click();
+    await logoutUser(page, "B");
+
+    await loginUser(page, "alice@test.dev", "password123");
+    await page.getByRole("link", { name: "Iceland trip" }).click();
+
+    await page.getByRole("button", { name: "Add expense" }).click();
+    await page.locator("#description").fill("Groceries");
+    await page.locator("#amount").fill("30.50");
+    await page.getByRole("dialog").getByRole("button", { name: "Add expense" }).click();
+    await expect(page.getByText("Groceries").first()).toBeVisible();
+
+    await expect(page.getByText("Alice created the group")).toBeVisible();
+    await expect(page.getByText("Bob joined the group")).toBeVisible();
+    await expect(
+      page.getByText("Alice added “Groceries” · €30.50"),
+    ).toBeVisible();
   });
 });
