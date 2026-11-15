@@ -4,10 +4,11 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { expenses, groups, splits } from "@/db/schema";
+import { activities, expenses, groups, splits } from "@/db/schema";
 import { currentUser } from "@/lib/session";
 import { getMemberIds, isMember } from "@/lib/data/groups";
 import { getFxRate } from "@/lib/fx";
+import { formatMoney } from "@/lib/format";
 import { splitAmounts } from "@/lib/splits";
 import { createExpenseSchema } from "@/lib/validation";
 
@@ -96,6 +97,14 @@ export async function createExpense(input: unknown): Promise<{ error?: string }>
         amountCents: outcome.amounts[id],
       })),
     );
+
+    await tx.insert(activities).values({
+      groupId,
+      actorId: user.id,
+      type: "expense_created",
+      expenseId: expense.id,
+      detail: `“${description}” · ${formatMoney(amountCents, currency)}`,
+    });
   });
 
   revalidatePath(`/groups/${groupId}`);
@@ -107,13 +116,31 @@ export async function deleteExpense(expenseId: string, groupId: string) {
   if (!user) redirect("/login");
 
   const [expense] = await db
-    .select({ id: expenses.id, paidById: expenses.paidById })
+    .select({
+      id: expenses.id,
+      paidById: expenses.paidById,
+      description: expenses.description,
+      amountCents: expenses.amountCents,
+      currency: expenses.currency,
+    })
     .from(expenses)
     .where(and(eq(expenses.id, expenseId), eq(expenses.groupId, groupId)))
     .limit(1);
 
   if (!expense || expense.paidById !== user.id) return;
 
-  await db.delete(expenses).where(eq(expenses.id, expenseId));
+  await db.transaction(async (tx) => {
+    await tx.delete(expenses).where(eq(expenses.id, expenseId));
+    await tx.insert(activities).values({
+      groupId,
+      actorId: user.id,
+      type: "expense_deleted",
+      detail: `“${expense.description}” · ${formatMoney(
+        expense.amountCents,
+        expense.currency,
+      )}`,
+    });
+  });
+
   revalidatePath(`/groups/${groupId}`);
 }

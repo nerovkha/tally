@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { groups, invites, memberships } from "@/db/schema";
+import { activities, groups, invites, memberships } from "@/db/schema";
 import { currentUser } from "@/lib/session";
 import { isMember } from "@/lib/data/groups";
 import { CURRENCY_CODES } from "@/lib/currencies";
@@ -53,6 +53,11 @@ export async function createGroup(
       .returning({ id: groups.id });
 
     await tx.insert(memberships).values({ groupId: group.id, userId: user.id });
+    await tx.insert(activities).values({
+      groupId: group.id,
+      actorId: user.id,
+      type: "group_created",
+    });
 
     return group.id;
   });
@@ -91,15 +96,23 @@ export async function leaveGroup(groupId: string) {
     .from(memberships)
     .where(eq(memberships.groupId, groupId));
 
-  await db
-    .delete(memberships)
-    .where(
-      and(eq(memberships.groupId, groupId), eq(memberships.userId, user.id)),
-    );
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(memberships)
+      .where(
+        and(eq(memberships.groupId, groupId), eq(memberships.userId, user.id)),
+      );
 
-  if (memberCount === 1) {
-    await db.delete(groups).where(eq(groups.id, groupId));
-  }
+    if (memberCount === 1) {
+      await tx.delete(groups).where(eq(groups.id, groupId));
+    } else {
+      await tx.insert(activities).values({
+        groupId,
+        actorId: user.id,
+        type: "member_left",
+      });
+    }
+  });
 
   revalidatePath("/groups");
   redirect("/groups");
@@ -151,10 +164,21 @@ export async function acceptInvite(formData: FormData) {
 
   if (!invite) redirect("/groups");
 
-  await db
-    .insert(memberships)
-    .values({ groupId: invite.groupId, userId: user.id })
-    .onConflictDoNothing();
+  await db.transaction(async (tx) => {
+    const joined = await tx
+      .insert(memberships)
+      .values({ groupId: invite.groupId, userId: user.id })
+      .onConflictDoNothing()
+      .returning({ userId: memberships.userId });
+
+    if (joined.length > 0) {
+      await tx.insert(activities).values({
+        groupId: invite.groupId,
+        actorId: user.id,
+        type: "member_joined",
+      });
+    }
+  });
 
   revalidatePath("/groups");
   redirect(`/groups/${invite.groupId}`);

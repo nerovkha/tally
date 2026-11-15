@@ -9,6 +9,8 @@ import {
 import { getGroupForUser } from "@/lib/data/groups";
 import { getExpensesForGroup } from "@/lib/data/expenses";
 import { getPaymentsForGroup } from "@/lib/data/payments";
+import { getActivityForGroup } from "@/lib/data/activities";
+import { activitySentence } from "@/lib/activities";
 import {
   computeNetBalances,
   settlementTransfers,
@@ -80,6 +82,7 @@ export default async function GroupPage({
   const base = group.baseCurrency;
   const expenses = await getExpensesForGroup(group.id);
   const payments = await getPaymentsForGroup(group.id);
+  const activity = await getActivityForGroup(group.id);
 
   const net = computeNetBalances(
     members.map((member) => member.id),
@@ -361,6 +364,40 @@ export default async function GroupPage({
                   {payment.fromUser.id === userId && (
                     <DeletePaymentButton paymentId={payment.id} />
                   )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        </>
+      )}
+
+      {activity.length > 0 && (
+        <>
+          <Separator className="my-8" />
+          <section>
+            <h2 className="text-sm font-medium text-muted-foreground">
+              Activity
+            </h2>
+            <ul className="mt-4 space-y-3">
+              {activity.map((event) => (
+                <li key={event.id} className="flex items-center gap-3">
+                  <Avatar className="size-7">
+                    <AvatarFallback className="text-[10px]">
+                      {initials(event.actor.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <div className="truncate text-sm">
+                      {activitySentence({
+                        type: event.type,
+                        actorName: event.actor.name,
+                        detail: event.detail,
+                      })}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatDay(event.createdAt)}
+                    </div>
+                  </div>
                 </li>
               ))}
             </ul>
