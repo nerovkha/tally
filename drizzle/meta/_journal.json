@@ -36,6 +36,13 @@
       "when": 1794772978320,
       "tag": "0004_curved_justin_hammer",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794773265661,
+      "tag": "0005_simple_warhawk",
+      "breakpoints": true
     }
   ]
 }

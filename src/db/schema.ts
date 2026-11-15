@@ -188,6 +188,7 @@ export const expensesRelations = relations(expenses, ({ one, many }) => ({
   group: one(groups, { fields: [expenses.groupId], references: [groups.id] }),
   paidBy: one(users, { fields: [expenses.paidById], references: [users.id] }),
   splits: many(splits),
+  comments: many(comments),
 }));
 
 export const splitsRelations = relations(splits, ({ one }) => ({
@@ -228,6 +229,32 @@ export const activitiesRelations = relations(activities, ({ one }) => ({
   }),
 }));
 
+export const comments = pgTable(
+  "comments",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    expenseId: uuid("expense_id")
+      .notNull()
+      .references(() => expenses.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("comments_expense_id_idx").on(t.expenseId)],
+);
+
+export const commentsRelations = relations(comments, ({ one }) => ({
+  expense: one(expenses, {
+    fields: [comments.expenseId],
+    references: [expenses.id],
+  }),
+  user: one(users, { fields: [comments.userId], references: [users.id] }),
+}));
+
 export type User = typeof users.$inferSelect;
 export type Group = typeof groups.$inferSelect;
 export type Membership = typeof memberships.$inferSelect;
@@ -236,3 +263,4 @@ export type Split = typeof splits.$inferSelect;
 export type Payment = typeof payments.$inferSelect;
 export type Invite = typeof invites.$inferSelect;
 export type Activity = typeof activities.$inferSelect;
+export type Comment = typeof comments.$inferSelect;
