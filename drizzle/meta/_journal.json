@@ -43,6 +43,13 @@
       "when": 1794773265661,
       "tag": "0005_simple_warhawk",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794804502939,
+      "tag": "0006_eminent_meteorite",
+      "breakpoints": true
     }
   ]
 }

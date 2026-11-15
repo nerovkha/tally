@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  customType,
   index,
   integer,
   numeric,
@@ -10,6 +11,12 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType() {
+    return "bytea";
+  },
+});
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -255,6 +262,37 @@ export const commentsRelations = relations(comments, ({ one }) => ({
   user: one(users, { fields: [comments.userId], references: [users.id] }),
 }));
 
+export const receipts = pgTable(
+  "receipts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    expenseId: uuid("expense_id")
+      .notNull()
+      .references(() => expenses.id, { onDelete: "cascade" }),
+    uploadedBy: uuid("uploaded_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    contentType: varchar("content_type", { length: 32 }).notNull(),
+    byteSize: integer("byte_size").notNull(),
+    data: bytea("data").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("receipts_expense_id_idx").on(t.expenseId)],
+);
+
+export const receiptsRelations = relations(receipts, ({ one }) => ({
+  expense: one(expenses, {
+    fields: [receipts.expenseId],
+    references: [expenses.id],
+  }),
+  uploadedByUser: one(users, {
+    fields: [receipts.uploadedBy],
+    references: [users.id],
+  }),
+}));
+
 export type User = typeof users.$inferSelect;
 export type Group = typeof groups.$inferSelect;
 export type Membership = typeof memberships.$inferSelect;
@@ -264,3 +302,4 @@ export type Payment = typeof payments.$inferSelect;
 export type Invite = typeof invites.$inferSelect;
 export type Activity = typeof activities.$inferSelect;
 export type Comment = typeof comments.$inferSelect;
+export type Receipt = typeof receipts.$inferSelect;

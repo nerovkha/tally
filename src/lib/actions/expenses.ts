@@ -12,7 +12,9 @@ import { formatMoney } from "@/lib/format";
 import { splitAmounts } from "@/lib/splits";
 import { createExpenseSchema } from "@/lib/validation";
 
-export async function createExpense(input: unknown): Promise<{ error?: string }> {
+export async function createExpense(
+  input: unknown,
+): Promise<{ error?: string; expenseId?: string }> {
   const user = await currentUser();
   if (!user) redirect("/login");
 
@@ -75,6 +77,8 @@ export async function createExpense(input: unknown): Promise<{ error?: string }>
     return { error: outcome.error };
   }
 
+  let expenseId = "";
+
   await db.transaction(async (tx) => {
     const [expense] = await tx
       .insert(expenses)
@@ -89,6 +93,8 @@ export async function createExpense(input: unknown): Promise<{ error?: string }>
         splitType,
       })
       .returning({ id: expenses.id });
+
+    expenseId = expense.id;
 
     await tx.insert(splits).values(
       participantIds.map((id) => ({
@@ -108,7 +114,7 @@ export async function createExpense(input: unknown): Promise<{ error?: string }>
   });
 
   revalidatePath(`/groups/${groupId}`);
-  return {};
+  return { expenseId };
 }
 
 export async function deleteExpense(expenseId: string, groupId: string) {
