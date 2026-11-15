@@ -161,4 +161,39 @@ test.describe("tally", () => {
     await expect(page.getByText("gets €55.00")).toBeVisible();
     await expect(page.getByText("owes €55.00")).toBeVisible();
   });
+
+  test("expenses can be categorized, totaled, and filtered", async ({ page }) => {
+    await registerUser(page, "Alice", "alice@test.dev", "password123");
+    await createGroupViaUi(page, "Iceland trip");
+
+    await page.getByRole("button", { name: "Add expense" }).click();
+    await page.locator("#description").fill("Bonus groceries");
+    await page.locator("#amount").fill("40");
+    await page.locator("#expense-category").click();
+    await page.getByRole("option", { name: "🛒 Groceries" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Add expense" }).click();
+    await expect(page.getByText("Bonus groceries")).toBeVisible();
+
+    await page.getByRole("button", { name: "Add expense" }).click();
+    await page.locator("#description").fill("Taxi to hostel");
+    await page.locator("#amount").fill("12");
+    await page.locator("#expense-category").click();
+    await page.getByRole("option", { name: "🚕 Transport" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Add expense" }).click();
+    await expect(page.getByText("Taxi to hostel")).toBeVisible();
+
+    await expect(
+      page.getByRole("listitem").filter({ hasText: "🛒 Groceries" }),
+    ).toContainText("€40.00");
+    await expect(
+      page.getByRole("listitem").filter({ hasText: "🚕 Transport" }),
+    ).toContainText("€12.00");
+
+    await page.getByRole("link", { name: "🚕 Transport" }).click();
+    await expect(page.getByText("Taxi to hostel")).toBeVisible();
+    await expect(page.getByText("Bonus groceries")).toHaveCount(0);
+
+    await page.getByRole("link", { name: "All", exact: true }).click();
+    await expect(page.getByText("Bonus groceries")).toBeVisible();
+  });
 });
