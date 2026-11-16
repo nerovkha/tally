@@ -14,6 +14,7 @@ export async function getExpensesForGroup(groupId: string) {
         with: { user: { columns: { id: true, name: true } } },
         orderBy: [asc(comments.createdAt)],
       },
+      receipts: { columns: { id: true } },
     },
   });
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { Paperclip } from "lucide-react";
 import { currentUser } from "@/lib/session";
 import {
   categoryBySlug,
@@ -326,6 +327,17 @@ export default async function GroupPage({
                     <span className="font-medium">
                       {formatMoney(expense.amountCents, expense.currency)}
                     </span>
+                    {expense.receipts[0] && (
+                      <a
+                        href={`/api/receipts/${expense.receipts[0].id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`Receipt for ${expense.description}`}
+                        className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+                      >
+                        <Paperclip className="size-4" />
+                      </a>
+                    )}
                     <CommentButton
                       expenseId={expense.id}
                       expenseLabel={expense.description}

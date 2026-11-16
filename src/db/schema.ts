@@ -196,6 +196,7 @@ export const expensesRelations = relations(expenses, ({ one, many }) => ({
   paidBy: one(users, { fields: [expenses.paidById], references: [users.id] }),
   splits: many(splits),
   comments: many(comments),
+  receipts: many(receipts),
 }));
 
 export const splitsRelations = relations(splits, ({ one }) => ({

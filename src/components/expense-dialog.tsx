@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { createExpense } from "@/lib/actions/expenses";
+import { attachReceipt } from "@/lib/actions/receipts";
 import { getFxQuote } from "@/lib/actions/fx";
 import {
   CATEGORIES,
@@ -58,6 +59,7 @@ export function ExpenseDialog({
   const [splitType, setSplitType] = useState<SplitType>("equal");
   const [selected, setSelected] = useState<string[]>(members.map((m) => m.id));
   const [values, setValues] = useState<Record<string, string>>({});
+  const [receipt, setReceipt] = useState<File | null>(null);
 
   function handleOpenChange(next: boolean) {
     setOpen(next);
@@ -70,6 +72,7 @@ export function ExpenseDialog({
       setSplitType("equal");
       setSelected(members.map((m) => m.id));
       setValues({});
+      setReceipt(null);
     }
   }
 
@@ -166,10 +169,20 @@ export function ExpenseDialog({
         participantIds: selected,
         values: numericValues,
       });
-      if (result?.error) {
-        toast.error(result.error);
+      if (result?.error || !result.expenseId) {
+        toast.error(result?.error ?? "Could not add the expense");
         return;
       }
+
+      if (receipt) {
+        const upload = await attachReceipt(result.expenseId, receipt);
+        if (upload?.error) {
+          toast.error(`Expense added, but the receipt failed: ${upload.error}`);
+          setOpen(false);
+          return;
+        }
+      }
+
       toast.success("Expense added");
       setOpen(false);
     });
@@ -265,6 +278,21 @@ export function ExpenseDialog({
                   </p>
                 )}
               </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="receipt">Receipt (optional)</Label>
+            <Input
+              id="receipt"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={(e) => setReceipt(e.target.files?.[0] ?? null)}
+            />
+            {receipt && (
+              <p className="text-sm text-muted-foreground">
+                {receipt.name} · {(receipt.size / 1024).toFixed(0)} kB
+              </p>
             )}
           </div>
 
