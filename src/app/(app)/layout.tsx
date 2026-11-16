@@ -5,9 +5,7 @@ import { UserMenu } from "@/components/user-menu";
 
 export const dynamic = "force-dynamic";
 
-export default async function GroupsLayout({
-  children,
-}: LayoutProps<"/groups">) {
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await currentUser();
 
   if (!user) {
@@ -18,9 +16,19 @@ export default async function GroupsLayout({
     <div className="flex min-h-screen flex-col">
       <header className="border-b">
         <div className="mx-auto flex h-14 w-full max-w-4xl items-center justify-between px-4">
-          <Link href="/groups" className="text-lg font-semibold tracking-tight">
-            Tally
-          </Link>
+          <div className="flex items-center gap-6">
+            <Link href="/groups" className="text-lg font-semibold tracking-tight">
+              Tally
+            </Link>
+            <nav className="flex items-center gap-4 text-sm text-muted-foreground">
+              <Link href="/groups" className="hover:text-foreground">
+                Groups
+              </Link>
+              <Link href="/dashboard" className="hover:text-foreground">
+                Dashboard
+              </Link>
+            </nav>
+          </div>
           <UserMenu name={user.name} email={user.email} />
         </div>
       </header>
