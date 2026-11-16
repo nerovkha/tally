@@ -9,6 +9,7 @@ import { activities, groups, payments, users } from "@/db/schema";
 import { currentUser } from "@/lib/session";
 import { isMember } from "@/lib/data/groups";
 import { formatMoney } from "@/lib/format";
+import { notifyGroupChanged } from "@/lib/realtime";
 
 const createPaymentSchema = z.object({
   groupId: z.string().uuid(),
@@ -79,6 +80,7 @@ export async function createPayment(
       paymentId: payment.id,
       detail: `paid ${toUser.name} ${formatMoney(amountCents, group.baseCurrency)}`,
     });
+    await notifyGroupChanged(tx, groupId);
   });
 
   revalidatePath(`/groups/${groupId}`);
@@ -113,6 +115,7 @@ export async function deletePayment(paymentId: string) {
       type: "payment_deleted",
       detail: `the payment to ${row.toName}`,
     });
+    await notifyGroupChanged(tx, row.groupId);
   });
 
   revalidatePath(`/groups/${row.groupId}`);

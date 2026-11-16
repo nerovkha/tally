@@ -313,4 +313,44 @@ test.describe("tally", () => {
     ).toContainText("€30.50");
     await expect(page.getByText("Alice added “Groceries” · €30.50")).toBeVisible();
   });
+
+  test("expense changes appear live for other members", async ({ page, browser }) => {
+    await registerUser(page, "Alice", "alice@test.dev", "password123");
+    await createGroupViaUi(page, "Iceland trip");
+    const inviteUrl = await getInviteLink(page);
+    await page.keyboard.press("Escape");
+    await logoutUser(page, "A");
+
+    const bobContext = await browser.newContext();
+    const bobPage = await bobContext.newPage();
+    await bobPage.goto("/register");
+    await bobPage.getByLabel("Name").fill("Bob");
+    await bobPage.getByLabel("Email").fill("bob@test.dev");
+    await bobPage.getByLabel("Password").fill("password123");
+    await bobPage.getByRole("button", { name: "Register" }).click();
+    await bobPage.waitForURL("/groups");
+    await bobPage.goto(inviteUrl);
+    await bobPage.getByRole("button", { name: "Join group" }).click();
+    await bobPage.getByRole("heading", { name: "Iceland trip" }).waitFor();
+
+    const eventsReady = bobPage
+      .waitForResponse((response) => response.url().includes("/events") && response.status() === 200)
+      .catch(() => undefined);
+    await bobPage.reload();
+    await eventsReady;
+
+    await loginUser(page, "alice@test.dev", "password123");
+    await page.getByRole("link", { name: "Iceland trip" }).click();
+
+    await page.getByRole("button", { name: "Add expense" }).click();
+    await page.locator("#description").fill("Surprise dinner");
+    await page.locator("#amount").fill("40");
+    await page.getByRole("dialog").getByRole("button", { name: "Add expense" }).click();
+    await expect(page.locator("#expenses-list").getByText("Surprise dinner")).toBeVisible();
+
+    await expect(
+      bobPage.locator("#expenses-list").getByText("Surprise dinner"),
+    ).toBeVisible({ timeout: 15000 });
+    await bobContext.close();
+  });
 });

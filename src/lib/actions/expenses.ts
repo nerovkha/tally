@@ -9,6 +9,7 @@ import { currentUser } from "@/lib/session";
 import { getMemberIds, isMember } from "@/lib/data/groups";
 import { getFxRate } from "@/lib/fx";
 import { formatMoney } from "@/lib/format";
+import { notifyGroupChanged } from "@/lib/realtime";
 import { splitAmounts } from "@/lib/splits";
 import { createExpenseSchema } from "@/lib/validation";
 
@@ -111,6 +112,7 @@ export async function createExpense(
       expenseId: expense.id,
       detail: `“${description}” · ${formatMoney(amountCents, currency)}`,
     });
+    await notifyGroupChanged(tx, groupId);
   });
 
   revalidatePath(`/groups/${groupId}`);
@@ -146,6 +148,7 @@ export async function deleteExpense(expenseId: string, groupId: string) {
         expense.currency,
       )}`,
     });
+    await notifyGroupChanged(tx, groupId);
   });
 
   revalidatePath(`/groups/${groupId}`);

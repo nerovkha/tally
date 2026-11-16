@@ -29,6 +29,7 @@ import { DeletePaymentButton } from "@/components/delete-payment-button";
 import { InviteDialog } from "@/components/invite-dialog";
 import { SettleButton } from "@/components/settle-button";
 import { SettleDialog } from "@/components/settle-dialog";
+import { GroupLiveRefresh } from "@/components/group-live-refresh";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -122,6 +123,7 @@ export default async function GroupPage({
 
   return (
     <main className="py-8">
+      <GroupLiveRefresh groupId={group.id} />
       <Link
         href="/groups"
         className="text-sm text-muted-foreground hover:underline"

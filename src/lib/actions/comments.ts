@@ -8,6 +8,7 @@ import { db } from "@/db";
 import { comments, expenses } from "@/db/schema";
 import { currentUser } from "@/lib/session";
 import { isMember } from "@/lib/data/groups";
+import { notifyGroupChanged } from "@/lib/realtime";
 
 const createCommentSchema = z.object({
   expenseId: z.string().uuid(),
@@ -42,7 +43,10 @@ export async function createComment(
     return { error: "You are not a member of this group" };
   }
 
-  await db.insert(comments).values({ expenseId, userId: user.id, body });
+  await db.transaction(async (tx) => {
+    await tx.insert(comments).values({ expenseId, userId: user.id, body });
+    await notifyGroupChanged(tx, expense.groupId);
+  });
 
   revalidatePath(`/groups/${expense.groupId}`);
   return {};
@@ -65,6 +69,10 @@ export async function deleteComment(commentId: string) {
 
   if (!comment || comment.userId !== user.id) return;
 
-  await db.delete(comments).where(eq(comments.id, commentId));
+  await db.transaction(async (tx) => {
+    await tx.delete(comments).where(eq(comments.id, commentId));
+    await notifyGroupChanged(tx, comment.groupId);
+  });
+
   revalidatePath(`/groups/${comment.groupId}`);
 }

@@ -7,6 +7,7 @@ import { db } from "@/db";
 import { expenses, receipts } from "@/db/schema";
 import { currentUser } from "@/lib/session";
 import { isMember } from "@/lib/data/groups";
+import { notifyGroupChanged } from "@/lib/realtime";
 import {
   detectImageType,
   receiptSizeError,
@@ -53,6 +54,7 @@ export async function attachReceipt(
       byteSize: bytes.byteLength,
       data: Buffer.from(bytes),
     });
+    await notifyGroupChanged(tx, expense.groupId);
   });
 
   revalidatePath(`/groups/${expense.groupId}`);

@@ -10,6 +10,7 @@ import { activities, groups, invites, memberships } from "@/db/schema";
 import { currentUser } from "@/lib/session";
 import { isMember } from "@/lib/data/groups";
 import { CURRENCY_CODES } from "@/lib/currencies";
+import { notifyGroupChanged } from "@/lib/realtime";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -58,6 +59,7 @@ export async function createGroup(
       actorId: user.id,
       type: "group_created",
     });
+    await notifyGroupChanged(tx, group.id);
 
     return group.id;
   });
@@ -111,6 +113,7 @@ export async function leaveGroup(groupId: string) {
         actorId: user.id,
         type: "member_left",
       });
+      await notifyGroupChanged(tx, groupId);
     }
   });
 
@@ -177,6 +180,7 @@ export async function acceptInvite(formData: FormData) {
         actorId: user.id,
         type: "member_joined",
       });
+      await notifyGroupChanged(tx, invite.groupId);
     }
   });
 
