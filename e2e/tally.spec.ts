@@ -274,7 +274,8 @@ test.describe("tally", () => {
 
     const link = page.getByRole("link", { name: "Receipt for Groceries" });
     await expect(link).toBeVisible();
-    const response = await page.request.get(await link.getAttribute("href"));
+    const href = (await link.getAttribute("href")) as string;
+    const response = await page.request.get(href);
     expect(response.status()).toBe(200);
     expect(response.headers()["content-type"]).toBe("image/png");
   });
