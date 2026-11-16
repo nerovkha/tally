@@ -249,4 +249,33 @@ test.describe("tally", () => {
     await expect(page.getByText("Split this with the others too")).toHaveCount(0);
     await expect(page.getByText("No comments yet")).toBeVisible();
   });
+
+  test("a receipt can be attached to an expense and downloaded", async ({ page }) => {
+    await registerUser(page, "Alice", "alice@test.dev", "password123");
+    await createGroupViaUi(page, "Iceland trip");
+
+    const png = Buffer.from([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
+      0x49, 0x48, 0x44, 0x52,
+    ]);
+
+    await page.getByRole("button", { name: "Add expense" }).click();
+    await page.locator("#description").fill("Groceries");
+    await page.locator("#amount").fill("30.50");
+    await page.locator("#receipt").setInputFiles({
+      name: "receipt.png",
+      mimeType: "image/png",
+      buffer: png,
+    });
+    await page.getByRole("dialog").getByRole("button", { name: "Add expense" }).click();
+
+    const list = page.locator("#expenses-list");
+    await expect(list.getByText("Groceries")).toBeVisible();
+
+    const link = page.getByRole("link", { name: "Receipt for Groceries" });
+    await expect(link).toBeVisible();
+    const response = await page.request.get(await link.getAttribute("href"));
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-type"]).toBe("image/png");
+  });
 });
