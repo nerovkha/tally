@@ -279,4 +279,38 @@ test.describe("tally", () => {
     expect(response.status()).toBe(200);
     expect(response.headers()["content-type"]).toBe("image/png");
   });
+
+  test("the dashboard summarizes balances, spending, and activity", async ({ page }) => {
+    await registerUser(page, "Alice", "alice@test.dev", "password123");
+    await createGroupViaUi(page, "Iceland trip");
+    const inviteUrl = await getInviteLink(page);
+    await page.keyboard.press("Escape");
+    await logoutUser(page, "A");
+
+    await registerUser(page, "Bob", "bob@test.dev", "password123");
+    await page.goto(inviteUrl);
+    await page.getByRole("button", { name: "Join group" }).click();
+    await logoutUser(page, "B");
+
+    await loginUser(page, "alice@test.dev", "password123");
+    await page.getByRole("link", { name: "Iceland trip" }).click();
+
+    await page.getByRole("button", { name: "Add expense" }).click();
+    await page.locator("#description").fill("Groceries");
+    await page.locator("#amount").fill("30.50");
+    await page.getByRole("dialog").getByRole("button", { name: "Add expense" }).click();
+    await expect(page.locator("#expenses-list").getByText("Groceries")).toBeVisible();
+
+    await page.getByRole("link", { name: "Dashboard" }).click();
+    await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+
+    await expect(page.getByText("You are owed €15.25")).toBeVisible();
+    await expect(page.getByText("Iceland trip").first()).toBeVisible();
+    await expect(page.getByText("Monthly spending (EUR)")).toBeVisible();
+    await expect(page.getByLabel(/Nov: €30\.50/)).toBeVisible();
+    await expect(
+      page.getByRole("listitem").filter({ hasText: "General" }),
+    ).toContainText("€30.50");
+    await expect(page.getByText("Alice added “Groceries” · €30.50")).toBeVisible();
+  });
 });
