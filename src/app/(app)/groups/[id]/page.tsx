@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Paperclip } from "lucide-react";
+import { Download, Paperclip } from "lucide-react";
 import { currentUser } from "@/lib/session";
 import {
   categoryBySlug,
@@ -8,7 +8,7 @@ import {
   isCategorySlug,
 } from "@/lib/categories";
 import { getGroupForUser } from "@/lib/data/groups";
-import { getExpensesForGroup } from "@/lib/data/expenses";
+import { getExpensePage, getExpensesForGroup } from "@/lib/data/expenses";
 import { getPaymentsForGroup } from "@/lib/data/payments";
 import { getActivityForGroup } from "@/lib/data/activities";
 import { getRecurringForGroup } from "@/lib/data/recurring";
@@ -35,6 +35,8 @@ import { GroupLiveRefresh } from "@/components/group-live-refresh";
 import { RecurringDialog } from "@/components/recurring-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 
 function initials(name: string) {
@@ -63,14 +65,18 @@ function balanceLabel(net: number, currency: string) {
   return { text: "settled up", className: "text-muted-foreground" };
 }
 
+export const PAGE_SIZE = 20;
+
 export default async function GroupPage({
   params,
   searchParams,
 }: PageProps<"/groups/[id]">) {
   const { id } = await params;
-  const { category } = await searchParams;
+  const { category, q, page } = await searchParams;
   const activeCategory =
     typeof category === "string" && isCategorySlug(category) ? category : null;
+  const search = typeof q === "string" ? q.trim().slice(0, 100) : "";
+  const pageNumber = Math.max(1, Number(page) || 1);
   const user = await currentUser();
 
   if (!user) {
@@ -117,9 +123,26 @@ export default async function GroupPage({
     .filter(isCategorySlug)
     .map((slug) => categoryBySlug(slug))
     .filter((meta) => meta !== undefined);
-  const visibleExpenses = activeCategory
-    ? expenses.filter((expense) => expense.category === activeCategory)
-    : expenses;
+
+  const { rows: visibleExpenses, total } = await getExpensePage(group.id, {
+    q: search || undefined,
+    category: activeCategory,
+    offset: (pageNumber - 1) * PAGE_SIZE,
+    limit: PAGE_SIZE,
+  });
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  const listUrl = (next: { page?: number; category?: string | null }) => {
+    const params = new URLSearchParams();
+    const nextCategory = next.category !== undefined ? next.category : activeCategory;
+    const nextPage = next.page ?? 1;
+    if (nextCategory) params.set("category", nextCategory);
+    if (search) params.set("q", search);
+    if (nextPage > 1) params.set("page", String(nextPage));
+    const query = params.toString();
+    return `/groups/${group.id}${query ? `?${query}` : ""}`;
+  };
+
   const nameById = new Map(members.map((member) => [member.id, member.name]));
   const memberOptions = members.map(({ id: memberId, name }) => ({
     id: memberId,
@@ -260,6 +283,14 @@ export default async function GroupPage({
             Expenses
           </h2>
           <div className="flex gap-2">
+            <a
+              href={`/api/groups/${group.id}/export`}
+              aria-label="Export expenses as CSV"
+              className="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm hover:bg-accent hover:text-accent-foreground"
+            >
+              <Download className="size-4" />
+              CSV
+            </a>
             <RecurringDialog groupId={group.id} currency={base} rules={recurring} />
             <ExpenseDialog
               groupId={group.id}
@@ -270,10 +301,26 @@ export default async function GroupPage({
           </div>
         </div>
 
+        <form action={`/groups/${group.id}`} className="mt-4 flex gap-2">
+          {activeCategory && (
+            <input type="hidden" name="category" value={activeCategory} />
+          )}
+          <Input
+            name="q"
+            defaultValue={search}
+            placeholder="Search expenses…"
+            className="max-w-64"
+            aria-label="Search expenses"
+          />
+          <Button type="submit" variant="outline">
+            Search
+          </Button>
+        </form>
+
         {presentCategories.length > 1 && (
           <div className="mt-4 flex flex-wrap gap-2">
             <Link
-              href={`/groups/${group.id}`}
+              href={listUrl({ category: null })}
               className={`rounded-full border px-3 py-1 text-xs transition-colors ${
                 activeCategory
                   ? "text-muted-foreground hover:border-foreground/25"
@@ -285,7 +332,7 @@ export default async function GroupPage({
             {presentCategories.map((meta) => (
               <Link
                 key={meta.slug}
-                href={`/groups/${group.id}?category=${meta.slug}`}
+                href={listUrl({ category: meta.slug })}
                 className={`rounded-full border px-3 py-1 text-xs transition-colors ${
                   activeCategory === meta.slug
                     ? "border-foreground/30 bg-secondary"
@@ -300,9 +347,11 @@ export default async function GroupPage({
 
         {visibleExpenses.length === 0 ? (
           <p className="mt-16 text-center text-muted-foreground">
-            {activeCategory
-              ? "No expenses in this category"
-              : "No expenses yet"}
+            {search
+              ? "Nothing matches that search"
+              : activeCategory
+                ? "No expenses in this category"
+                : "No expenses yet"}
           </p>
         ) : (
           <ul id="expenses-list" className="mt-4 divide-y">
@@ -365,6 +414,27 @@ export default async function GroupPage({
               );
             })}
           </ul>
+        )}
+
+        {total > PAGE_SIZE && (
+          <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+            <span>
+              {(pageNumber - 1) * PAGE_SIZE + 1}–
+              {Math.min(pageNumber * PAGE_SIZE, total)} of {total}
+            </span>
+            <div className="flex gap-3">
+              {pageNumber > 1 && (
+                <Link href={listUrl({ page: pageNumber - 1 })} className="hover:text-foreground">
+                  ← Newer
+                </Link>
+              )}
+              {pageNumber < totalPages && (
+                <Link href={listUrl({ page: pageNumber + 1 })} className="hover:text-foreground">
+                  Older →
+                </Link>
+              )}
+            </div>
+          </div>
         )}
       </section>
 
