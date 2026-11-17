@@ -413,4 +413,57 @@ test.describe("tally", () => {
     const denied = await page.request.get(`/api/groups/${crypto.randomUUID()}/export`);
     expect(denied.status()).toBe(404);
   });
+
+  test("admins manage the group and balances guard membership changes", async ({ page }) => {
+    await registerUser(page, "Alice", "alice@test.dev", "password123");
+    await createGroupViaUi(page, "Iceland trip");
+    const inviteUrl = await getInviteLink(page);
+    await page.keyboard.press("Escape");
+    await logoutUser(page, "A");
+
+    await registerUser(page, "Bob", "bob@test.dev", "password123");
+    await page.goto(inviteUrl);
+    await page.getByRole("button", { name: "Join group" }).click();
+    await logoutUser(page, "B");
+
+    await loginUser(page, "alice@test.dev", "password123");
+    await page.getByRole("link", { name: "Iceland trip" }).click();
+    await page.getByRole("button", { name: "Add expense" }).click();
+    await page.locator("#description").fill("Groceries");
+    await page.locator("#amount").fill("30.50");
+    await page.getByRole("dialog").getByRole("button", { name: "Add expense" }).click();
+    await expect(page.getByText("owes €15.25")).toBeVisible();
+    await logoutUser(page, "A");
+
+    await loginUser(page, "bob@test.dev", "password123");
+    await page.getByRole("link", { name: "Iceland trip" }).click();
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("button", { name: "Leave" }).click();
+    await expect(page.getByText("Settle your balance before leaving this group")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Iceland trip" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Settle up" }).click();
+    await page.locator("#paid-to").click();
+    await page.getByRole("option", { name: "Alice" }).click();
+    await page.locator("#settle-amount").fill("15.25");
+    await page.getByRole("button", { name: "Record payment" }).click();
+    await expect(page.getByText("settled up").first()).toBeVisible();
+    await logoutUser(page, "B");
+
+    await loginUser(page, "alice@test.dev", "password123");
+    await page.getByRole("link", { name: "Iceland trip" }).click();
+    await page.getByRole("button", { name: "Group settings" }).click();
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("button", { name: "Remove Bob" }).click();
+    await expect(page.getByText("Bob removed")).toBeVisible();
+    await expect(page.getByText("Alice removed Bob")).toBeVisible();
+
+    await page.locator("#rename-group").fill("Flat 4B");
+    await page.getByRole("button", { name: "Rename" }).click();
+    await page.keyboard.press("Escape");
+    await expect(
+      page.getByRole("heading", { name: "Flat 4B" }),
+    ).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText("Alice renamed the group to “Flat 4B”")).toBeVisible();
+  });
 });

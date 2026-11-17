@@ -94,7 +94,11 @@ export function SettleDialog({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="paid-to">Paid to</Label>
-            <Select value={toUserId ?? undefined} onValueChange={setToUserId}>
+            <Select
+              key={toUserId ?? "unset"}
+              value={toUserId ?? undefined}
+              onValueChange={setToUserId}
+            >
               <SelectTrigger id="paid-to" className="w-full">
                 <SelectValue placeholder="Pick a member" />
               </SelectTrigger>
