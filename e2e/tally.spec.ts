@@ -376,4 +376,41 @@ test.describe("tally", () => {
       page.getByText("Alice added “Rent” · €800.00 (recurring)"),
     ).toBeVisible();
   });
+
+  test("the ledger can be searched and exported as csv", async ({ page }) => {
+    await registerUser(page, "Alice", "alice@test.dev", "password123");
+    await createGroupViaUi(page, "Iceland trip");
+    const groupId = page.url().split("/").pop() as string;
+
+    for (const [description, amount] of [
+      ["Groceries run", "30.50"],
+      ["Taxi to airport", "12"],
+    ] as const) {
+      await page.getByRole("button", { name: "Add expense" }).click();
+      await page.locator("#description").fill(description);
+      await page.locator("#amount").fill(amount);
+      await page.getByRole("dialog").getByRole("button", { name: "Add expense" }).click();
+      await expect(page.locator("#expenses-list").getByText(description)).toBeVisible();
+    }
+
+    await page.getByLabel("Search expenses").fill("taxi");
+    await page.getByRole("button", { name: "Search", exact: true }).click();
+    const list = page.locator("#expenses-list");
+    await expect(list.getByText("Taxi to airport")).toBeVisible();
+    await expect(list.getByText("Groceries run")).toHaveCount(0);
+
+    await page.getByLabel("Search expenses").fill("");
+    await page.getByRole("button", { name: "Search", exact: true }).click();
+    await expect(list.getByText("Groceries run")).toBeVisible();
+
+    const response = await page.request.get(`/api/groups/${groupId}/export`);
+    expect(response.status()).toBe(200);
+    const csv = await response.text();
+    expect(csv).toContain("Date,Description,Category,Paid by,Amount,Currency,Rate to EUR,Amount in EUR");
+    expect(csv).toContain("Taxi to airport,general,Alice,12.00,EUR");
+    expect(csv).toContain("Groceries run,general,Alice,30.50,EUR");
+
+    const denied = await page.request.get(`/api/groups/${crypto.randomUUID()}/export`);
+    expect(denied.status()).toBe(404);
+  });
 });
