@@ -33,6 +33,7 @@ import { SettleButton } from "@/components/settle-button";
 import { SettleDialog } from "@/components/settle-dialog";
 import { GroupLiveRefresh } from "@/components/group-live-refresh";
 import { RecurringDialog } from "@/components/recurring-dialog";
+import { GroupSettingsDialog } from "@/components/group-settings-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -89,7 +90,7 @@ export default async function GroupPage({
     notFound();
   }
 
-  const { group, members, isCreator } = data;
+  const { group, members, isCreator, isAdmin } = data;
   const userId = user.id;
   const base = group.baseCurrency;
   await materializeRecurring([group.id]);
@@ -166,6 +167,18 @@ export default async function GroupPage({
         </div>
         <div className="flex gap-2">
           <InviteDialog groupId={group.id} />
+          {isAdmin && (
+            <GroupSettingsDialog
+              groupId={group.id}
+              name={group.name}
+              members={members.map(({ id: memberId, name, role }) => ({
+                id: memberId,
+                name,
+                role,
+              }))}
+              currentUserId={userId}
+            />
+          )}
           {isCreator ? (
             <DeleteGroupButton groupId={group.id} />
           ) : (
@@ -185,6 +198,7 @@ export default async function GroupPage({
                 </AvatarFallback>
               </Avatar>
               <span className="text-sm">{member.name}</span>
+              {member.role === "admin" && <Badge variant="outline">Admin</Badge>}
               {member.id === userId && <Badge variant="secondary">You</Badge>}
             </li>
           ))}

@@ -12,6 +12,12 @@ describe("activitySentence", () => {
     expect(
       activitySentence({ type: "member_left", actorName: "Bob" }),
     ).toBe("Bob left the group");
+    expect(
+      activitySentence({ type: "group_renamed", actorName: "Alice", detail: "“Flat 4B”" }),
+    ).toBe("Alice renamed the group to “Flat 4B”");
+    expect(
+      activitySentence({ type: "member_removed", actorName: "Alice", detail: "Bob" }),
+    ).toBe("Alice removed Bob");
   });
 
   it("weaves the detail snapshot into expense events", () => {

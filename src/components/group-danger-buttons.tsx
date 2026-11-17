@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { toast } from "sonner";
 import { deleteGroup, leaveGroup } from "@/lib/actions/groups";
 import { Button } from "@/components/ui/button";
 
@@ -14,7 +15,10 @@ export function LeaveGroupButton({ groupId }: { groupId: string }) {
       onClick={() => {
         if (confirm("Leave this group?")) {
           startTransition(async () => {
-            await leaveGroup(groupId);
+            const result = await leaveGroup(groupId);
+            if (result?.error) {
+              toast.error(result.error);
+            }
           });
         }
       }}

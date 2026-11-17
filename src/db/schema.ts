@@ -52,6 +52,8 @@ export const memberships = pgTable(
     groupId: uuid("group_id")
       .notNull()
       .references(() => groups.id, { onDelete: "cascade" }),
+    // "admin" | "member"; group creators start as admins
+    role: varchar("role", { length: 12 }).notNull().default("member"),
     joinedAt: timestamp("joined_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

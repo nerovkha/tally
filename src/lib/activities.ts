@@ -1,7 +1,9 @@
 export const ACTIVITY_TYPES = [
   "group_created",
+  "group_renamed",
   "member_joined",
   "member_left",
+  "member_removed",
   "expense_created",
   "expense_deleted",
   "payment_recorded",
@@ -29,10 +31,16 @@ export function activitySentence(input: {
   switch (input.type) {
     case "group_created":
       return `${actorName} created the group`;
+    case "group_renamed":
+      return detail
+        ? `${actorName} renamed the group to ${detail}`
+        : `${actorName} renamed the group`;
     case "member_joined":
       return `${actorName} joined the group`;
     case "member_left":
       return `${actorName} left the group`;
+    case "member_removed":
+      return detail ? `${actorName} removed ${detail}` : `${actorName} removed a member`;
     case "expense_created":
       return detail ? `${actorName} added ${detail}` : `${actorName} added an expense`;
     case "expense_deleted":

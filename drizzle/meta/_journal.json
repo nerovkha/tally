@@ -57,6 +57,13 @@
       "when": 1794805977379,
       "tag": "0007_worthless_hercules",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794806432831,
+      "tag": "0008_thankful_turbo",
+      "breakpoints": true
     }
   ]
 }
