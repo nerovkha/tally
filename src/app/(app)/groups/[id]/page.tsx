@@ -11,6 +11,8 @@ import { getGroupForUser } from "@/lib/data/groups";
 import { getExpensesForGroup } from "@/lib/data/expenses";
 import { getPaymentsForGroup } from "@/lib/data/payments";
 import { getActivityForGroup } from "@/lib/data/activities";
+import { getRecurringForGroup } from "@/lib/data/recurring";
+import { materializeRecurring } from "@/lib/materialize";
 import { activitySentence } from "@/lib/activities";
 import {
   computeNetBalances,
@@ -30,6 +32,7 @@ import { InviteDialog } from "@/components/invite-dialog";
 import { SettleButton } from "@/components/settle-button";
 import { SettleDialog } from "@/components/settle-dialog";
 import { GroupLiveRefresh } from "@/components/group-live-refresh";
+import { RecurringDialog } from "@/components/recurring-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -83,9 +86,11 @@ export default async function GroupPage({
   const { group, members, isCreator } = data;
   const userId = user.id;
   const base = group.baseCurrency;
+  await materializeRecurring([group.id]);
   const expenses = await getExpensesForGroup(group.id);
   const payments = await getPaymentsForGroup(group.id);
   const activity = await getActivityForGroup(group.id);
+  const recurring = await getRecurringForGroup(group.id);
 
   const net = computeNetBalances(
     members.map((member) => member.id),
@@ -254,12 +259,15 @@ export default async function GroupPage({
           <h2 className="text-sm font-medium text-muted-foreground">
             Expenses
           </h2>
-          <ExpenseDialog
-            groupId={group.id}
-            members={memberOptions}
-            currentUserId={userId}
-            baseCurrency={base}
-          />
+          <div className="flex gap-2">
+            <RecurringDialog groupId={group.id} currency={base} rules={recurring} />
+            <ExpenseDialog
+              groupId={group.id}
+              members={memberOptions}
+              currentUserId={userId}
+              baseCurrency={base}
+            />
+          </div>
         </div>
 
         {presentCategories.length > 1 && (

@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  boolean,
   customType,
   index,
   integer,
@@ -294,6 +295,46 @@ export const receiptsRelations = relations(receipts, ({ one }) => ({
   }),
 }));
 
+export const recurringExpenses = pgTable(
+  "recurring_expenses",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    groupId: uuid("group_id")
+      .notNull()
+      .references(() => groups.id, { onDelete: "cascade" }),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    description: text("description").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    currency: varchar("currency", { length: 3 }).notNull().default("EUR"),
+    category: varchar("category", { length: 24 }).notNull().default("general"),
+    // "weekly" | "monthly"; instances are split equally between the members
+    // at materialization time
+    frequency: text("frequency").notNull(),
+    nextDueAt: timestamp("next_due_at", { withTimezone: true }).notNull(),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("recurring_expenses_group_id_idx").on(t.groupId)],
+);
+
+export const recurringExpensesRelations = relations(
+  recurringExpenses,
+  ({ one }) => ({
+    group: one(groups, {
+      fields: [recurringExpenses.groupId],
+      references: [groups.id],
+    }),
+    createdByUser: one(users, {
+      fields: [recurringExpenses.createdBy],
+      references: [users.id],
+    }),
+  }),
+);
+
 export type User = typeof users.$inferSelect;
 export type Group = typeof groups.$inferSelect;
 export type Membership = typeof memberships.$inferSelect;
@@ -304,3 +345,4 @@ export type Invite = typeof invites.$inferSelect;
 export type Activity = typeof activities.$inferSelect;
 export type Comment = typeof comments.$inferSelect;
 export type Receipt = typeof receipts.$inferSelect;
+export type RecurringExpense = typeof recurringExpenses.$inferSelect;

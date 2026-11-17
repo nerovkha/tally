@@ -50,6 +50,13 @@
       "when": 1794804502939,
       "tag": "0006_eminent_meteorite",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794805977379,
+      "tag": "0007_worthless_hercules",
+      "breakpoints": true
     }
   ]
 }
