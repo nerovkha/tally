@@ -353,4 +353,27 @@ test.describe("tally", () => {
     ).toBeVisible({ timeout: 15000 });
     await bobContext.close();
   });
+
+  test("recurring expenses materialize when due", async ({ page }) => {
+    await registerUser(page, "Alice", "alice@test.dev", "password123");
+    await createGroupViaUi(page, "Iceland trip");
+
+    await page.getByRole("button", { name: "Recurring" }).click();
+    await page.locator("#recurring-description").fill("Rent");
+    await page.locator("#recurring-amount").fill("800");
+    await page.locator("#recurring-next").fill("2026-11-16");
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Schedule recurring expense" })
+      .click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+
+    await page.reload();
+    const list = page.locator("#expenses-list");
+    await expect(list.getByText("Rent")).toBeVisible();
+    await expect(page.getByText("€800.00").first()).toBeVisible();
+    await expect(
+      page.getByText("Alice added “Rent” · €800.00 (recurring)"),
+    ).toBeVisible();
+  });
 });
