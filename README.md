@@ -3,6 +3,8 @@
 Split expenses with friends, settle up, and stay even. A full-stack capstone
 built on top of the [Full Stack Open](https://fullstackopen.com) curriculum.
 
+## Live Deployment
+Deployment link: https://tally-one-ivory.vercel.app
 ## Features
 
 ### Core
