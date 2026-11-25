@@ -47,6 +47,9 @@ export default function RegisterForm() {
           minLength={8}
           autoComplete="new-password"
         />
+        <p className="text-sm text-muted-foreground">
+          At least 8 characters
+        </p>
       </div>
       {state.error && (
         <p className="text-sm text-red-600" role="alert">
